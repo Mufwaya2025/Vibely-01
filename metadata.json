@@ -1,0 +1,7 @@
+{
+  "name": "Vibely",
+  "description": "A location-based event discovery and ticketing platform for Africa. Vibely makes it easy to create, discover, attend, and manage events — with built-in payments, ticket scanning, and promoter tools.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

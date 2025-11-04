@@ -1,0 +1,20 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "module": "ESNext",
+    "target": "ES2022",
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "types": ["node", "express"]
+  },
+  "include": [
+    "./**/*.ts",
+    "./**/*.d.ts",
+    "../api/**/*.ts",
+    "../utils/**/*.ts",
+    "../types.ts",
+    "../constants.ts"
+  ]
+}

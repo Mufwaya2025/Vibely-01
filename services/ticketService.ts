@@ -1,0 +1,75 @@
+import { Ticket, Event, User } from '../types';
+import { apiFetch } from '../utils/apiClient';
+
+/**
+ * Fetches all tickets for a specific user from the API.
+ */
+export const getTicketsForUser = async (userId: string): Promise<(Ticket & { event: Event })[]> => {
+  const response = await apiFetch('/api/tickets', { query: { userId } });
+  if (!response.ok) throw new Error('Failed to fetch user tickets');
+  return response.json();
+};
+
+/**
+ * Creates a new ticket via the API.
+ */
+export const createTicket = async (event: Event, user: User): Promise<Ticket> => {
+  const response = await apiFetch('/api/tickets', {
+    method: 'POST',
+    body: { event, user },
+  });
+  if (!response.ok) throw new Error('Failed to create ticket');
+  return response.json();
+};
+
+/**
+ * Submits a review for a ticket via the API.
+ */
+export const submitReview = async (ticketId: string, rating: number, reviewText: string): Promise<Ticket> => {
+  const response = await apiFetch('/api/tickets/review', {
+    method: 'POST',
+    body: { ticketId, rating, reviewText },
+  });
+  if (!response.ok) throw new Error('Failed to submit review');
+  return response.json();
+};
+
+// Fix: Add a function to get tickets for a specific event, which was missing.
+/**
+ * Gets all tickets for a given event from the API.
+ */
+export const getTicketsForEvent = async (eventId: string): Promise<Ticket[]> => {
+  const response = await apiFetch(`/api/tickets/event/${eventId}`);
+  if (!response.ok) throw new Error('Failed to fetch tickets for event');
+  return response.json();
+};
+
+/**
+ * Gets all reviews for a given event from the API.
+ */
+export const getReviewsForEvent = async (eventId: string): Promise<Ticket[]> => {
+  const response = await apiFetch('/api/reviews', { query: { eventId } });
+  if (!response.ok) throw new Error('Failed to fetch reviews');
+  return response.json();
+};
+
+/**
+ * Scans/redeems a ticket via the API.
+ */
+export const scanTicket = async (ticketId: string): Promise<Ticket | null> => {
+    const response = await apiFetch('/api/tickets/scan', {
+      method: 'POST',
+      body: { ticketId },
+    });
+    if (!response.ok) return null;
+    return response.json();
+}
+
+// NOTE: getAllTickets is no longer needed on the frontend, as calculations like
+// ticketsSold are now handled by the backend. We keep it here in case it's needed
+// for a future admin panel.
+export const getAllTickets = async (): Promise<Ticket[]> => {
+    // This would call a protected admin endpoint.
+    console.warn("getAllTickets is now a protected backend operation.");
+    return [];
+}

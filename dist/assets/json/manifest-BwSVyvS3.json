@@ -1,0 +1,21 @@
+{
+  "short_name": "Vibely",
+  "name": "Vibely: Event Discovery & Ticketing",
+  "description": "A location-based event discovery and ticketing platform for Africa.",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#8B5CF6",
+  "background_color": "#F9FAFB"
+}
