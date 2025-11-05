@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Event, Ticket } from "../types";
+import { Event, Ticket, User } from "../types";
 import CalendarIcon from "./icons/CalendarIcon";
 import LocationPinIcon from "./icons/LocationPinIcon";
 import TicketIcon from "./icons/TicketIcon";
@@ -14,9 +14,10 @@ interface EventDetailModalProps {
   onClose: () => void;
   onPurchase: (event: Event) => void;
   isPurchased: boolean;
+  onMessageOrganizer?: (organizer: User) => void; // Optional prop to enable messaging
 }
 
-const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose, onPurchase, isPurchased }) => {
+const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose, onPurchase, isPurchased, onMessageOrganizer }) => {
   const [reviews, setReviews] = useState<Ticket[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
 
@@ -132,6 +133,35 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose, onP
               <div>
                 <p className="font-semibold">Organizer</p>
                 <p className="text-gray-600">{event.organizer.name}</p>
+              </div>
+            </div>
+            <div className="flex items-start">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 mr-3 text-purple-500 shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+              <div>
+                <p className="font-semibold">Contact</p>
+                <button 
+                  onClick={() => {
+                    // Create a temporary user object for the organizer
+                    const organizerUser: User = {
+                      id: event.organizer.id,
+                      name: event.organizer.name,
+                      email: 'organizer@example.com', // Default email since organizer doesn't have email in the event object
+                      role: 'manager' as const,
+                      status: 'active' as const,
+                      interests: [],
+                      attendedEvents: []
+                      // authProviders is optional according to the User interface
+                    };
+                    if (onMessageOrganizer) {
+                      onMessageOrganizer(organizerUser);
+                    }
+                  }}
+                  className="text-purple-600 hover:text-purple-800 font-semibold"
+                >
+                  Message Organizer
+                </button>
               </div>
             </div>
           </div>

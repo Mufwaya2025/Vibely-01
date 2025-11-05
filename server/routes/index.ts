@@ -80,6 +80,7 @@ import {
 } from '../../api/adminSettings';
 import { handleSearchLocation, handleGetAddressFromCoordinates } from '../../api/location';
 import { handleGetAIRecommendations } from '../../api/recommendations';
+import { handleGetAnalysisData } from '../../api/analysis';
 import {
   handleGetSubscriptionTiers,
   handleCreateSubscriptionTier,
@@ -180,6 +181,9 @@ export const registerRoutes = (app: Express) => {
   router.get('/location/search', createHandler(handleSearchLocation));
   router.get('/location/reverse', createHandler(handleGetAddressFromCoordinates));
   router.post('/recommendations', createHandler(handleGetAIRecommendations));
+  
+  // Analytics
+  router.get('/analysis', createHandler(handleGetAnalysisData));
 
   // Admin subscriptions
   router.get('/admin/subscriptions/tiers', createHandler(handleGetSubscriptionTiers));

@@ -322,3 +322,13 @@ export interface NotificationQueueEntry {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Message {
+  id: string;
+  senderId: string;
+  senderName: string;
+  receiverId: string;
+  content: string;
+  timestamp: string; // ISO date string
+  read: boolean;
+}

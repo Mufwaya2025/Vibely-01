@@ -15,12 +15,15 @@ import AnalysisDashboard from './AnalysisDashboard';
 import RevenueDashboard from './RevenueDashboard';
 import SettingsDashboard from './SettingsDashboard';
 import SubscriptionModal from './SubscriptionModal';
+import ManagerMessaging from './ManagerMessaging';
 import ListIcon from './icons/ListIcon';
 import ChartBarIcon from './icons/ChartBarIcon';
 import WalletIcon from './icons/WalletIcon';
 import CreditCardIcon from './icons/CreditCardIcon';
 import CogIcon from './icons/CogIcon';
 import PlusCircleIcon from './icons/PlusCircleIcon';
+import QrCodeIcon from './icons/QrCodeIcon';
+import TicketScanner from './TicketScanner';
 
 interface ManagerDashboardProps {
   user: User;
@@ -33,7 +36,7 @@ interface ManagerDashboardProps {
   onNavigateHome?: () => void;
 }
 
-type Tab = 'events' | 'analytics' | 'revenue' | 'subscriptions' | 'settings';
+type Tab = 'events' | 'analytics' | 'revenue' | 'subscriptions' | 'settings' | 'scanner' | 'messages';
 
 const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
   user,
@@ -60,6 +63,13 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
   const [subscriptionTransactionsError, setSubscriptionTransactionsError] = useState<string | null>(null);
   const [subscriptionTransactionsNotice, setSubscriptionTransactionsNotice] = useState<string | null>(null);
   const [verifyingReference, setVerifyingReference] = useState<string | null>(null);
+  const [isScannerModalOpen, setIsScannerModalOpen] = useState(false);
+  const [scannerEventId, setScannerEventId] = useState<string | null>(null);
+  // Messaging state
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [activeConversation, setActiveConversation] = useState<any>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [newMessage, setNewMessage] = useState('');
 
   const loadSubscriptionTransactions = async (options?: { isCancelled?: () => boolean }) => {
     const isCancelled = options?.isCancelled ?? (() => false);
@@ -163,6 +173,43 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
     }
   };
 
+  const handleOpenScanner = (eventId: string) => {
+    setScannerEventId(eventId);
+    setIsScannerModalOpen(true);
+  };
+
+  const handleTicketScanned = (ticketId: string) => {
+    // Optionally update UI to show that a ticket was scanned
+    console.log(`Ticket ${ticketId} scanned successfully`);
+  };
+  
+  const handleShareEvent = (event: Event) => {
+    // Create the share URL (using VITE_API_BASE_URL from environment)
+    const shareUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/events/${event.id}`;
+    
+    // Try to use the Web Share API if available (for mobile devices)
+    if (navigator.share) {
+      navigator.share({
+        title: event.title,
+        text: `Check out this event: ${event.title} on ${new Date(event.date).toLocaleDateString()}`,
+        url: shareUrl,
+      })
+      .catch(console.error);
+    } else {
+      // Fallback: Copy to clipboard
+      navigator.clipboard.writeText(shareUrl)
+        .then(() => {
+          // You could show a toast notification here
+          alert(`Event link copied to clipboard:\n${shareUrl}`);
+        })
+        .catch(err => {
+          console.error('Failed to copy link: ', err);
+          // Fallback: Show the link in an alert
+          alert(`Share this link:\n${shareUrl}`);
+        });
+    }
+  };
+
   const handleDowngrade = async () => {
     if (isDowngrading) return;
     setDowngradeError(null);
@@ -232,6 +279,18 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
               <div className="relative">
                 <img src={event.imageUrl} alt={event.title} className="w-full h-40 object-cover" />
                 <div className="absolute top-2 right-2 flex space-x-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShareEvent(event);
+                    }}
+                    className="bg-white rounded-full p-1.5 shadow-md hover:bg-gray-100 transition-colors"
+                    aria-label="Share event"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+                    </svg>
+                  </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -467,6 +526,46 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
             downgradeError={downgradeError}
           />
         );
+      case 'scanner':
+        return (
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md space-y-6">          
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Ticket Scanner</h2>
+              <p className="text-sm text-slate-600">Scan attendee tickets at your events</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {events.map((event) => (
+                <div key={event.id} className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
+                  <h3 className="font-semibold text-slate-800">{event.title}</h3>
+                  <p className="text-sm text-slate-600">{new Date(event.date).toLocaleDateString()}</p>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenScanner(event.id)}
+                    className="mt-3 inline-flex items-center px-3 py-1.5 text-sm font-semibold text-white bg-purple-600 rounded-md hover:bg-purple-700"
+                  >
+                    <QrCodeIcon className="w-4 h-4 mr-1" />
+                    Scan Tickets
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            {events.length === 0 && (
+              <div className="text-center py-8 border border-dashed border-slate-200 rounded-xl">
+                <h3 className="text-lg font-semibold text-slate-900">No events available</h3>
+                <p className="text-sm text-slate-600 mt-2">Create an event to start scanning tickets.</p>
+              </div>
+            )}
+          </div>
+        );
+      case 'messages':
+        return (
+          <ManagerMessaging 
+            user={user} 
+            onClose={() => handleTabChange('events')} 
+          />
+        );
       default:
         return null;
     }
@@ -543,6 +642,8 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
                 label="Subs"
                 description="History"
               />
+              <NavItem tab="scanner" icon={<QrCodeIcon className="w-5 h-5" />} label="Scanner" description="Tickets" />
+              <NavItem tab="messages" icon={<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>} label="Messages" description="Inbox" />
               <NavItem tab="settings" icon={<CogIcon className="w-5 h-5" />} label="Settings" description="Plan" />
             </div>
           </aside>
@@ -576,6 +677,14 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
           subscriptionTiers={subscriptionTiers}
           isLoadingTiers={isLoadingSubscriptionTiers}
           tiersError={subscriptionTiersError}
+        />
+      )}
+      
+      {isScannerModalOpen && scannerEventId && (
+        <TicketScanner
+          eventId={scannerEventId}
+          onClose={() => setIsScannerModalOpen(false)}
+          onTicketScanned={handleTicketScanned}
         />
       )}
     </div>
