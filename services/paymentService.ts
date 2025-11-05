@@ -95,14 +95,14 @@ export const processPayment = async (
   const previousOverflow = document.body.style.overflow;
   const overlay = document.createElement('div');
   overlay.style.cssText =
-    'position:fixed; inset:0; background:rgba(15,23,42,0.82); z-index:9999; display:flex; align-items:center; justify-content:center; padding:24px;';
+    'position:fixed; inset:0; background:rgba(15,23,42,0.82); z-index:9999; display:flex; align-items:center; justify-content:center; padding:24px; overflow:hidden;';
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-modal', 'true');
   overlay.setAttribute('aria-label', 'Lenco checkout');
 
   const dialog = document.createElement('div');
   dialog.style.cssText =
-    'position:relative; width:min(460px, 100%); height:min(92vh, 720px); background:#ffffff; border-radius:20px; box-shadow:0 24px 80px rgba(30,41,59,0.2); display:flex; flex-direction:column; overflow:hidden;';
+    'position:relative; width:min(460px, 100%); height:min(92vh, 720px); background:#ffffff; border-radius:20px; box-shadow:0 24px 80px rgba(30,41,59,0.2); display:flex; flex-direction:column; overflow:hidden; overscroll-behavior:contain;';
   overlay.appendChild(dialog);
 
   const header = document.createElement('div');
@@ -133,12 +133,12 @@ export const processPayment = async (
   header.appendChild(closeButton);
 
   const frameWrapper = document.createElement('div');
-  frameWrapper.style.cssText = 'flex:1; position:relative; background:#f9fafb;';
+  frameWrapper.style.cssText = 'flex:1; position:relative; background:#f9fafb; overflow:hidden;';
   dialog.appendChild(frameWrapper);
 
   const iframe = document.createElement('iframe');
   iframe.title = 'Lenco checkout';
-  iframe.style.cssText = 'border:0; width:100%; height:100%;';
+  iframe.style.cssText = 'border:0; width:100%; height:100%; overflow:hidden;';
   iframe.setAttribute('allow', 'payment *; clipboard-read; clipboard-write; fullscreen');
   frameWrapper.appendChild(iframe);
 

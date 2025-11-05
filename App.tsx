@@ -23,6 +23,7 @@ import EventMap from './components/EventMap';
 import Footer from './components/Footer';
 import OrganizerTiers from './components/OrganizerTiers';
 import SubscriptionModal from './components/SubscriptionModal';
+import Messaging from './components/Messaging';
 import { getPlatformStats, getAdminEvents, updateEventStatus, updateEventFeatured } from './services/adminService';
 
 const App: React.FC = () => {
@@ -35,7 +36,8 @@ const App: React.FC = () => {
   const [toast, setToast] = useState<{ message: string, type: 'success' } | null>(null);
 
   // Modal State
-  const [activeModal, setActiveModal] = useState<'details' | 'purchase' | 'login' | 'myTickets' | 'viewTicket' | 'review' | 'subscription' | null>(null);
+  const [activeModal, setActiveModal] = useState<'details' | 'purchase' | 'login' | 'myTickets' | 'viewTicket' | 'review' | 'subscription' | 'messaging' | null>(null);
+  const [messagingRecipient, setMessagingRecipient] = useState<User | null>(null);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<(Ticket & { event: Event }) | null>(null);
@@ -64,8 +66,6 @@ const App: React.FC = () => {
         const fetchedEvents = await getAllEvents();
         setEvents(fetchedEvents);
         setFavoriteEventIds(getFavoriteEvents());
-        const location = await getCurrentLocation();
-        setUserLocation(location);
       } catch (err) {
         setError('Failed to load event data. Please try refreshing the page.');
         console.error(err);
@@ -74,6 +74,19 @@ const App: React.FC = () => {
       }
     };
     fetchInitialData();
+    
+    // Fetch location separately and non-blocking to prevent hanging the app
+    const fetchLocation = async () => {
+      try {
+        const location = await getCurrentLocation();
+        setUserLocation(location);
+      } catch (err) {
+        console.error("Failed to get current location:", err);
+        // Don't set an error state for location issues, just use fallback
+        setUserLocation({ lat: -15.4167, lon: 28.2833 }); // Lusaka coordinates as fallback
+      }
+    };
+    fetchLocation();
   }, []);
 
   // Fetch user-specific data after login
@@ -262,6 +275,11 @@ const App: React.FC = () => {
     setFavoriteEventIds(newFavorites);
   };
 
+  const openMessaging = (recipient: User) => {
+    setMessagingRecipient(recipient);
+    setActiveModal('messaging');
+  };
+
   // Derived State
   const purchasedTicketEventIds = useMemo(() => new Set(tickets.map(t => t.eventId)), [tickets]);
   
@@ -379,6 +397,21 @@ const App: React.FC = () => {
         onLogout={handleLogout}
         onShowTickets={() => setActiveModal('myTickets')}
         purchasedTicketsCount={tickets.length}
+        onOpenMessaging={user ? () => {
+          // For now, we'll need to implement a contacts list or direct messaging
+          // For demo, let's hardcode a potential contact (the first manager we find)
+          // In a real app, this would open a contacts/messaging interface
+          const defaultManager = {
+            id: 'demo-manager',
+            name: 'Demo Manager',
+            email: 'demo@manager.com',
+            role: 'manager' as const,
+            status: 'active' as const,
+            interests: [],
+            attendedEvents: []
+          };
+          openMessaging(defaultManager);
+        } : undefined}
       />
       
       <main className="mx-auto w-full max-w-7xl px-4 pb-16 pt-10 sm:px-8 lg:px-12 xl:px-16">
@@ -455,12 +488,13 @@ const App: React.FC = () => {
       <Footer />
 
       {/* Modals */}
-      {activeModal === 'details' && selectedEvent && (
+      {activeModal === 'details' && selectedEvent && user && (
         <EventDetailModal
           event={selectedEvent}
           onClose={() => setActiveModal(null)}
           onPurchase={handlePurchaseClick}
           isPurchased={purchasedTicketEventIds.has(selectedEvent.id)}
+          onMessageOrganizer={(organizer) => openMessaging(organizer)}
         />
       )}
       {activeModal === 'purchase' && selectedEvent && user && (
@@ -480,6 +514,13 @@ const App: React.FC = () => {
           user={user} 
           onClose={() => setActiveModal(null)} 
           onSuccess={handleSubscriptionSuccess} 
+        />
+      )}
+      {activeModal === 'messaging' && user && messagingRecipient && (
+        <Messaging 
+          currentUser={user} 
+          recipient={messagingRecipient} 
+          onClose={() => setActiveModal(null)} 
         />
       )}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}

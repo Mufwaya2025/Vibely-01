@@ -10,6 +10,7 @@ interface HeaderProps {
   onDashboardClick?: () => void;
   canAccessDashboard?: boolean;
   dashboardLabel?: string;
+  onOpenMessaging?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -21,6 +22,7 @@ const Header: React.FC<HeaderProps> = ({
   onDashboardClick,
   canAccessDashboard,
   dashboardLabel,
+  onOpenMessaging,
 }) => {
   return (
     <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-40">
@@ -54,6 +56,15 @@ const Header: React.FC<HeaderProps> = ({
                     className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-full hover:bg-purple-700 transition-colors shadow"
                   >
                     {dashboardLabel ?? 'Dashboard'}
+                  </button>
+                )}
+
+                {onOpenMessaging && (
+                  <button
+                    onClick={onOpenMessaging}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-full hover:bg-blue-700 transition-colors shadow"
+                  >
+                    Messages
                   </button>
                 )}
                 <button

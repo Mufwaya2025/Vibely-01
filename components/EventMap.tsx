@@ -279,7 +279,29 @@ const EventMap: React.FC<EventMapProps> = ({
         });
       }
 
+      // Bind the popup content for click
       marker.bindPopup(popupContent, { closeButton: false });
+      
+      // Add tooltip for hover
+      const tooltipContent = `
+        <div class="font-semibold text-sm">${event.title}</div>
+        <div class="text-xs text-gray-600">${formatPrice(event.price)}</div>
+        <div class="text-xs text-gray-500">${event.location}</div>
+      `;
+      marker.bindTooltip(tooltipContent, { 
+        permanent: false, 
+        direction: 'top',
+        className: 'event-tooltip'
+      });
+      
+      // Add interactivity for hover effects
+      marker.on('mouseover', function () {
+        this.openTooltip();
+      });
+      
+      marker.on('mouseout', function () {
+        this.closeTooltip();
+      });
     });
 
     // If we have any events, fit to them
@@ -295,25 +317,43 @@ const EventMap: React.FC<EventMapProps> = ({
    * 5. UI
    */
   return (
-    <div className="bg-white rounded-2xl shadow-lg h-[500px] overflow-hidden relative">
-      {eventsWithCoords.length === 0 ? (
-        <div className="absolute inset-x-4 top-4 z-20 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700 shadow">
-          No events with valid coordinates were found.
-          <br />
-          Open DevTools → Console to see which events were skipped and what fields they had.
-        </div>
-      ) : (
-        <div className="absolute left-4 top-4 z-20 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-purple-700 shadow">
-          {eventsWithCoords.length} event{eventsWithCoords.length === 1 ? '' : 's'} on map
-        </div>
-      )}
-      {!userLocation && (
-        <div className="absolute right-4 top-4 z-20 rounded-lg bg-white/90 px-3 py-2 text-xs text-gray-700 shadow">
-          Location access is off – showing events only.
-        </div>
-      )}
-      <div ref={mapContainerRef} className="h-full w-full" />
-    </div>
+    <>
+      <style>{`
+        .event-tooltip.leaflet-tooltip {
+          background: rgba(255, 255, 255, 0.95);
+          color: #1e293b;
+          border: 1px solid #e2e8f0;
+          border-radius: 0.5rem;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          padding: 0.5rem;
+          min-width: 150px;
+          text-align: center;
+        }
+        .event-tooltip.leaflet-tooltip:before {
+          background: rgba(255, 255, 255, 0.95);
+          border: 1px solid #e2e8f0;
+        }
+      `}</style>
+      <div className="bg-white rounded-2xl shadow-lg h-[500px] overflow-hidden relative">
+        {eventsWithCoords.length === 0 ? (
+          <div className="absolute inset-x-4 top-4 z-20 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700 shadow">
+            No events with valid coordinates were found.
+            <br />
+            Open DevTools → Console to see which events were skipped and what fields they had.
+          </div>
+        ) : (
+          <div className="absolute left-4 top-4 z-20 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-purple-700 shadow">
+            {eventsWithCoords.length} event{eventsWithCoords.length === 1 ? '' : 's'} on map
+          </div>
+        )}
+        {!userLocation && (
+          <div className="absolute right-4 top-4 z-20 rounded-lg bg-white/90 px-3 py-2 text-xs text-gray-700 shadow">
+            Location access is off – showing events only.
+          </div>
+        )}
+        <div ref={mapContainerRef} className="h-full w-full" />
+      </div>
+    </>
   );
 };
 
