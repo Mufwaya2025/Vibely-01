@@ -54,7 +54,7 @@ Vibely is a full-stack event management and ticketing platform built with React 
    ```
 
 5. **Access the Application**:
-   - Frontend: http://localhost:3000
+   - Frontend: http://localhost:4000
    - Backend API: http://localhost:4000
 
 ### Production Build

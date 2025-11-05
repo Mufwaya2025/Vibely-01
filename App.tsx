@@ -389,6 +389,21 @@ const App: React.FC = () => {
           </p>
         </section>
 
+        {user && user.role === 'attendee' && tickets.length > 0 && (
+          <section className="mt-8 text-center">
+            <div className="inline-block bg-white rounded-2xl shadow-lg p-6 max-w-md mx-auto">
+              <h2 className="text-2xl font-bold text-slate-800 mb-3">Your Tickets</h2>
+              <p className="text-slate-600 mb-4">You have {tickets.length} ticket{tickets.length !== 1 ? 's' : ''} available</p>
+              <button
+                onClick={() => setActiveModal('myTickets')}
+                className="inline-flex items-center rounded-full bg-purple-600 px-5 py-3 text-sm font-semibold text-white shadow transition hover:bg-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
+              >
+                View My Tickets
+              </button>
+            </div>
+          </section>
+        )}
+
         <section className="mt-10">
           <FilterBar
             onFilterChange={setFilters}
