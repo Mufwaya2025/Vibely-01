@@ -226,6 +226,16 @@ const App: React.FC = () => {
       }
   };
 
+  const handleEditEvent = async (eventData: Event) => {
+      if (!user) throw new Error("User not logged in");
+      // The actual event update logic would be implemented here
+      // For now, we'll just update the event in the local state
+      setEvents(prevEvents => 
+        prevEvents.map(e => e.id === eventData.id ? eventData : e)
+      );
+      setToast({ message: `Event "${eventData.title}" updated successfully!`, type: 'success' });
+  };
+
   const handleAdminUpdateEventStatus = async (eventId: string, status: string) => {
     if (!user) return;
     setUpdatingEventId(eventId);
@@ -383,6 +393,7 @@ const App: React.FC = () => {
             user={user} 
             events={managerEvents}
             onCreateEvent={handleCreateEvent}
+            onEditEvent={handleEditEvent}
             onSubscriptionSuccess={handleSubscriptionSuccess}
             onLogout={handleLogout}
         />
@@ -434,7 +445,7 @@ const App: React.FC = () => {
         <section className="mt-10">
           {filteredEvents.length > 0 ? (
             viewMode === 'list' ? (
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="event-grid gap-6 sm:gap-8">
                 {filteredEvents.map((event) => (
                   <EventCard
                     key={event.id}

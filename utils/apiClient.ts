@@ -8,6 +8,7 @@ interface ApiFetchOptions {
   body?: unknown;
   headers?: Record<string, string>;
   user?: User | null;
+  deviceToken?: string | null; // For device authentication
 }
 
 const baseFromEnv = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
@@ -35,7 +36,7 @@ export const apiFetch = async (
   path: string,
   options: ApiFetchOptions = {}
 ): Promise<Response> => {
-  const { method = 'GET', body, headers = {}, query, user } = options;
+  const { method = 'GET', body, headers = {}, query, user, deviceToken } = options;
   const url = buildUrl(path, query);
 
   const fetchHeaders = new Headers(headers);
@@ -44,6 +45,9 @@ export const apiFetch = async (
   }
   if (user) {
     fetchHeaders.set('x-user-id', user.id);
+  }
+  if (deviceToken) {
+    fetchHeaders.set('Authorization', `Bearer ${deviceToken}`);
   }
 
   const init: RequestInit = {

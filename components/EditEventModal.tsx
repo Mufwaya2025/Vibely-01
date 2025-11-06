@@ -169,7 +169,9 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ onClose, onEditEvent, u
 
     // Leaflet needs a tick to compute layout inside modals
     setTimeout(() => {
-      map.invalidateSize();
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
+      }
     }, 200);
 
     return () => {

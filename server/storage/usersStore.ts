@@ -98,6 +98,9 @@ const sanitize = (user: StoredUser): User => {
   return rest;
 };
 
+const toPublic = (user: StoredUser | null): User | null =>
+  user ? sanitize(user) : null;
+
 export const usersStore = {
   findByEmail(email: string): StoredUser | null {
     const normalized = normalizeEmail(email);
@@ -109,6 +112,10 @@ export const usersStore = {
   },
 
   getAll(): StoredUser[] {
+    return [...getCache()];
+  },
+
+  findAll(): StoredUser[] {
     return [...getCache()];
   },
 
@@ -186,6 +193,46 @@ export const usersStore = {
     return this.update(id, {
       authProviders: [...user.authProviders, provider],
     });
+  },
+
+  updateRole(id: string, role: UserRole): User | null {
+    const updated = this.update(id, { role });
+    return toPublic(updated);
+  },
+
+  updateStatus(id: string, status: UserStatus): User | null {
+    const updated = this.update(id, { status });
+    return toPublic(updated);
+  },
+
+  resetPassword(id: string): User | null {
+    const users = getCache();
+    const index = users.findIndex((user) => user.id === id);
+    if (index === -1) return null;
+
+    const providers = users[index].authProviders.includes('local')
+      ? users[index].authProviders
+      : [...users[index].authProviders, 'local'];
+
+    const updated = this.update(id, {
+      passwordHash: this.hashPassword(DEFAULT_PASSWORD),
+      authProviders: providers,
+    });
+
+    return toPublic(updated);
+  },
+
+  updateSubscription(
+    id: string,
+    tier: User['subscriptionTier'],
+    expiresAt?: string
+  ): User | null {
+    const updated = this.update(id, {
+      subscriptionTier: tier,
+      subscriptionExpiresAt: expiresAt,
+    });
+
+    return toPublic(updated);
   },
 
   toPublicUser(user: StoredUser | null): User | null {

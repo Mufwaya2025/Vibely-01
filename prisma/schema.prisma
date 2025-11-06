@@ -14,16 +14,102 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Event {
-  id        String   @id @default(cuid())
-  title     String
-  createdAt DateTime @default(now())
-  // add more fields you need
-}
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
   role      String   @default("USER")
   createdAt DateTime @default(now())
+}
+
+model StaffUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  devices   Device[]
+  scanLogs  ScanLog[]
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  title     String
+  createdAt DateTime @default(now())
+  tickets   Ticket[]
+  scanLogs  ScanLog[]
+}
+
+model Device {
+  id                String         @id @default(cuid())
+  name              String?
+  staffUser         StaffUser      @relation(fields: [staffUserId], references: [id])
+  staffUserId       String
+  devicePublicId    String         @unique
+  deviceSecret      String         // This should be hashed
+  lastIp            String?
+  lastSeenAt        DateTime?
+  isActive          Boolean        @default(true)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  deviceTokens      DeviceToken[]
+  scanLogs          ScanLog[]
+}
+
+model DeviceToken {
+  id         String    @id @default(cuid())
+  device      Device   @relation(fields: [deviceId], references: [id])
+  deviceId    String
+  token       String   // This should be hashed
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model Ticket {
+  id            String    @id @default(cuid())
+  event         Event     @relation(fields: [eventId], references: [id])
+  eventId       String
+  code          String    @unique
+  status        TicketStatus @default(UNUSED)
+  holderName    String
+  holderEmail   String?
+  createdAt     DateTime  @default(now())
+  usedAt        DateTime?  // Add this field to track when ticket was used
+  scanLogs      ScanLog[]
+}
+
+model ScanLog {
+  id            String      @id @default(cuid())
+  ticket        Ticket      @relation(fields: [ticketId], references: [id])
+  ticketId      String
+  event         Event       @relation(fields: [eventId], references: [id])
+  eventId       String
+  device        Device      @relation(fields: [deviceId], references: [id])
+  deviceId      String
+  staffUser     StaffUser   @relation(fields: [staffUserId], references: [id])
+  staffUserId   String
+  scanResult    ScanResult
+  message       String
+  scannedAt     DateTime    @default(now())
+  lat           Decimal?    // Changed from Float to Decimal for better precision
+  lon           Decimal?    // Changed from Float to Decimal for better precision
+  ip            String?
+  createdAt     DateTime    @default(now())
+}
+
+enum TicketStatus {
+  UNUSED
+  USED
+  BLOCKED
+}
+
+enum ScanResult {
+  VALID
+  ALREADY_USED
+  BLOCKED
+  NOT_FOUND
+  WRONG_EVENT
+  EXPIRED
 }

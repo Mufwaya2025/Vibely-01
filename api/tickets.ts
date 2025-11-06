@@ -106,7 +106,7 @@ export async function handleSubmitReview(req: { body: { ticketId: string, rating
 }
 
 /**
- * Handles scanning/redeeming a ticket.
+ * Handles scanning/redeeming a ticket via admin/organizer interface (different from device scanning).
  * @param {Request} req - Contains ticketId in the body.
  * @returns {Response} The updated ticket object.
  */
@@ -119,7 +119,7 @@ export async function handleScanTicket(req: { body: { ticketId: string } }) {
     if (!ticket) {
         return new Response(JSON.stringify({ message: 'Ticket not found' }), { status: 404 });
     }
-    if (ticket.status === 'scanned') {
+    if (ticket.status === 'scanned' || ticket.status === 'used') {
          return new Response(JSON.stringify({ message: 'Ticket already scanned' }), { status: 409 }); // 409 Conflict
     }
 
