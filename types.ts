@@ -4,7 +4,8 @@ export type UserRole = 'attendee' | 'manager' | 'admin';
 export type UserStatus = 'active' | 'suspended' | 'onboarding';
 export type AuthProvider = 'local' | 'google';
 export type PaymentMethod = 'CreditCard' | 'MobileMoney';
-export type TicketStatus = 'valid' | 'scanned';
+export type TicketStatus = 'UNUSED' | 'USED' | 'BLOCKED';
+export type TicketScanResult = 'VALID' | 'ALREADY_USED' | 'BLOCKED' | 'NOT_FOUND' | 'WRONG_EVENT' | 'EXPIRED';
 export type PayoutAccountType = 'Bank' | 'MobileMoney';
 export type TransactionType = 'Sale' | 'Payout' | 'Fee' | 'Refund';
 export type PayoutStatus = 'Pending' | 'Completed' | 'Failed';
@@ -70,14 +71,86 @@ export interface Event {
 }
 
 export interface Ticket {
+  id: string;
+  eventId: string;
+  code: string;
+  status: TicketStatus;
+  holderName: string;
+  holderEmail?: string;
+  createdAt: string;
+  usedAt?: string;
+}
+
+export interface StaffUser {
+  id: string;
+  email: string;
+  passwordHash: string;
+  name?: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+  price: number;
+  category: EventCategory;
+  imageUrl: string;
+  organizer: {
+    id: string;
+    name: string;
+  };
+  reviewCount?: number;
+  averageRating?: number;
+  ticketQuantity: number;
+  ticketsSold?: number;
+  status?: EventStatus;
+  flagCount?: number;
+  isFeatured?: boolean;
+  ticketTiers?: TicketTier[];
+}
+
+export interface Device {
+  id: string;
+  name?: string;
+  staffUserId: string;
+  devicePublicId: string;
+  deviceSecret: string;
+  lastIp?: string;
+  lastSeenAt?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DeviceToken {
+  id: string;
+  deviceId: string;
+  token: string;
+  expiresAt?: string;
+  revokedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ScanLog {
+  id: string;
   ticketId: string;
   eventId: string;
-  userId: string;
-  purchaseDate: string;
-  status: TicketStatus;
-  scanTimestamp?: string;
-  rating?: number;
-  reviewText?: string;
+  deviceId: string;
+  staffUserId: string;
+  scanResult: TicketScanResult;
+  message: string;
+  scannedAt: string;
+  lat?: number;
+  lon?: number;
+  ip?: string;
+  createdAt: string;
 }
 
 export interface TicketTier {

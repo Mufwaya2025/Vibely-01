@@ -54,7 +54,7 @@ export const getReviewsForEvent = async (eventId: string): Promise<Ticket[]> => 
 };
 
 /**
- * Scans/redeems a ticket via the API.
+ * Scans/redeems a ticket via the API (for organizer/manager interface).
  */
 export const scanTicket = async (ticketId: string): Promise<Ticket | null> => {
     const response = await apiFetch('/api/tickets/scan', {
@@ -63,6 +63,36 @@ export const scanTicket = async (ticketId: string): Promise<Ticket | null> => {
     });
     if (!response.ok) return null;
     return response.json();
+}
+
+/**
+ * Scans a ticket via the secure device-based API (for dedicated scanning devices).
+ */
+export const scanTicketSecure = async (
+  eventId: string, 
+  ticketCode: string, 
+  deviceToken: string,
+  lat?: number, 
+  lon?: number
+): Promise<any> => {
+  const scanData = {
+    event_id: eventId,
+    ticket_code: ticketCode,
+    lat,
+    lon,
+    scanned_at: new Date().toISOString()
+  };
+
+  const response = await apiFetch('/api/tickets/scan-secure', {
+    method: 'POST',
+    body: scanData,
+    deviceToken, // Pass the device token for authentication
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to scan ticket: ${response.statusText}`);
+  }
+  return response.json();
 }
 
 // NOTE: getAllTickets is no longer needed on the frontend, as calculations like

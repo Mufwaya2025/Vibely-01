@@ -149,7 +149,9 @@ const EventMap: React.FC<EventMapProps> = ({
     if (!map) return;
 
     const applyUserLocation = () => {
-      map.invalidateSize();
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
+      }
 
       if (!userLocation) {
         if (userMarkerRef.current) {

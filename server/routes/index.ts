@@ -1,9 +1,9 @@
 import type { Express } from 'express';
 import { Router } from 'express';
-import { createHandler } from '../utils/createHandler';
+import { createHandler, createTicketScanRateLimitedHandler, createDeviceAuthRateLimitedHandler } from '../utils/createHandler';
 
 import { handleLogin, handleSignup, handleGoogleLogin } from '../../api/auth';
-import { handleGetAllEvents, handleCreateEvent, handleUpdateEvent } from '../../api/events';
+import { handleGetAllEvents, handleCreateEvent, handleUpdateEvent, handleDeleteEvent } from '../../api/events';
 import {
   handleGetTicketsForUser,
   handleGetReviewsForEvent,
@@ -12,6 +12,8 @@ import {
   handleSubmitReview,
   handleScanTicket,
 } from '../../api/tickets';
+import { handleDeviceAuthorization, handleDeviceLogout } from '../../api/devices';
+import { handleTicketScan } from '../../api/ticketScan';
 import {
   handleCreatePaymentSession,
   handleVerifyPayment,
@@ -100,6 +102,7 @@ export const registerRoutes = (app: Express) => {
   router.get('/events', createHandler(handleGetAllEvents));
   router.post('/events', createHandler(handleCreateEvent));
   router.put('/events/:id', createHandler(handleUpdateEvent));
+  router.delete('/events/:id', createHandler(handleDeleteEvent));
 
   // Tickets
   router.get('/tickets', createHandler(handleGetTicketsForUser));
@@ -109,7 +112,12 @@ export const registerRoutes = (app: Express) => {
   router.get('/reviews', createHandler(handleGetReviewsForEvent));
   router.post('/tickets', createHandler(handleCreateTicket));
   router.post('/tickets/review', createHandler(handleSubmitReview));
-  router.post('/tickets/scan', createHandler(handleScanTicket));
+  router.post('/tickets/scan', createHandler(handleScanTicket)); // Legacy endpoint for non-device scan
+  
+  // Device authorization and ticket scanning (secure endpoints)
+  router.post('/devices/authorize', createDeviceAuthRateLimitedHandler(handleDeviceAuthorization));
+  router.post('/devices/logout', createHandler(handleDeviceLogout));
+  router.post('/tickets/scan-secure', createTicketScanRateLimitedHandler(handleTicketScan)); // Device-based scan
 
   // Payments
   router.post('/payments/session', createHandler(handleCreatePaymentSession));

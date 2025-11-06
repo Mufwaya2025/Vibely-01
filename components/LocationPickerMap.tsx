@@ -70,7 +70,9 @@ const LocationPickerMap: React.FC<LocationPickerMapProps> = ({
     const map = mapRef.current;
     if (!map) return;
 
-    map.invalidateSize();
+    if (mapRef.current) {
+      mapRef.current.invalidateSize();
+    }
 
     if (!selectedLocation) {
       if (markerRef.current) {

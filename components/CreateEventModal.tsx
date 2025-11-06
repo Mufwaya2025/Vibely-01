@@ -159,7 +159,9 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onClose, onCreateEv
 
     // Leaflet needs a tick to compute layout inside modals
     setTimeout(() => {
-      map.invalidateSize();
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
+      }
     }, 200);
 
     getCurrentLocation().then((coords) => {

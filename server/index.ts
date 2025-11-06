@@ -144,6 +144,14 @@ io.on('connection', (socket) => {
 
 import { attachUser } from './middleware/attachUser';
 import { registerRoutes } from './routes';
+import { deviceAuthRateLimiter, ticketScanRateLimiter } from './middleware/rateLimit';
+import { scannerCors } from './middleware/cors';
+
+// Apply rate limiting and CORS for specific routes
+app.use('/api/devices/authorize', deviceAuthRateLimiter);
+app.use('/api/tickets/scan-secure', ticketScanRateLimiter);
+app.use('/api/devices', scannerCors);
+app.use('/api/tickets/scan-secure', scannerCors);
 
 app.use(attachUser);
 registerRoutes(app);
