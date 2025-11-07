@@ -13,6 +13,34 @@
         "local"
       ],
       "passwordHash": "$2a$10$FAQqZN9yWeajHEV5nyYZ9.2zZoClQC2lAUL3Rev98untdd7WPm/0G"
+    },
+    {
+      "id": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "name": "Mufwaya Kaungu",
+      "email": "mufwaya@outlook.com",
+      "passwordHash": "$2a$10$keSEp./l.zUrwg8Tsm7eqOVsIQPvojvNFrKESr0ZDzMs.LrX/oqI.",
+      "role": "manager",
+      "status": "active",
+      "interests": [],
+      "attendedEvents": [],
+      "subscriptionTier": "Regular",
+      "authProviders": [
+        "local"
+      ]
+    },
+    {
+      "id": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "name": "Mufwaya Kaungu",
+      "email": "mufwaya@yahoo.com",
+      "passwordHash": "$2a$10$/4EDQn/2OT6qeRIGnW73gOr2V/872NqtuItFRCPTfqB3cuO2f2BVq",
+      "role": "attendee",
+      "status": "active",
+      "interests": [],
+      "attendedEvents": [],
+      "subscriptionTier": "Regular",
+      "authProviders": [
+        "local"
+      ]
     }
   ]
 }
