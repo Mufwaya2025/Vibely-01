@@ -70,12 +70,16 @@ export async function handleCreateTicket(req: { body: { event: Event, user: User
     const { event, user } = req.body;
     await new Promise(resolve => setTimeout(resolve, 200));
 
+    const ticketId = `tkt-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     const newTicket: Ticket = {
-        ticketId: `tkt-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        ticketId,
         eventId: event.id,
         userId: user.id,
         purchaseDate: new Date().toISOString(),
         status: 'valid',
+        code: ticketId,
+        holderName: user.name,
+        holderEmail: user.email,
     };
 
     const createdTicket = db.tickets.create(newTicket);

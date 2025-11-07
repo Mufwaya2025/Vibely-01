@@ -71,7 +71,8 @@ export interface Event {
 }
 
 export interface Ticket {
-  id: string;
+  ticketId: string;
+  id?: string;
   eventId: string;
   code: string;
   status: TicketStatus;

@@ -41,6 +41,20 @@
       "authProviders": [
         "local"
       ]
+    },
+    {
+      "id": "6c732e33-6f37-4275-9abd-df8139e1cf5e",
+      "name": "Test",
+      "email": "test@gmail.com",
+      "passwordHash": "$2a$10$x0v32N/9v5jAKlJfIYxwx.OG1oht7GnC2zVRfdUsvFMnxkbbGlY4O",
+      "role": "attendee",
+      "status": "active",
+      "interests": [],
+      "attendedEvents": [],
+      "subscriptionTier": "Regular",
+      "authProviders": [
+        "local"
+      ]
     }
   ]
 }
