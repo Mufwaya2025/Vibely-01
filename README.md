@@ -43,6 +43,7 @@ The frontend proxies API calls to VITE_API_BASE_URL (default http://localhost:40
 - The purchase modal launches the Lenco inline widget with the event price (default currency ZMW, locale zm).
 - On success the frontend calls /api/payments/verify so the server confirms the collection status through Lenco's /collections/status/:reference endpoint before issuing the ticket.
 - Webhooks from Lenco (collection.successful) are validated using the HMAC signature and will re-verify transactions if the UI is offline.
+- By default the app expects real Lenco credentials; set `LENCO_USE_MOCK_GATEWAY=true` in `.env` if you need to simulate checkout locally without live keys.
 
 ### Subscription upgrades
 - Upgrading to Pro (SubscriptionModal) now goes through the same Lenco flow. When the payment reports succeeded, the backend extends the organizer's subscription by one month.
