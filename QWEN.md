@@ -178,6 +178,6 @@ The application appears to be configured for deployment with:
 - The application uses JSON file-based storage (`data/users.json`) for user data, which should be swapped for a proper database in production
 - Payment processing is handled through the Lenco API (Zambian payment gateway)
 - The application has a sophisticated subscription model for organizers
-- Super admin account is created on first run with email `admin@vibely.com` and password `Password99!!`
+- Super admin account is created on first run with email `mufwaya.zm@gmail.com` and password `ew0fwcxs`
 - The project includes comprehensive admin tools for platform management
 - AI recommendations are implemented to suggest relevant events to users

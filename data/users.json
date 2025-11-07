@@ -1,3 +1,18 @@
 {
-  "users": []
+  "users": [
+    {
+      "id": "admin-1",
+      "name": "Admin User",
+      "email": "mufwaya.zm@gmail.com",
+      "role": "admin",
+      "status": "active",
+      "interests": [],
+      "attendedEvents": [],
+      "subscriptionTier": "Pro",
+      "authProviders": [
+        "local"
+      ],
+      "passwordHash": "$2a$10$FAQqZN9yWeajHEV5nyYZ9.2zZoClQC2lAUL3Rev98untdd7WPm/0G"
+    }
+  ]
 }
