@@ -35,7 +35,7 @@ pm run dev
 
 The frontend proxies API calls to VITE_API_BASE_URL (default http://localhost:4000).
 
-- User accounts (including new signups) are persisted in `data/users.json`. On first run, the file is created with the seeded super admin user (email: admin@vibely.com, password: Password99!!). Keep this file secure in production or swap in your managed database.
+- User accounts (including new signups) are persisted in `data/users.json`. On first run, the file is created with the seeded super admin user (email: mufwaya.zm@gmail.com, password: ew0fwcxs). Keep this file secure in production or swap in your managed database.
 
 ## Payments & Payouts
 
