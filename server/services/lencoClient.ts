@@ -36,11 +36,32 @@ export class LencoClientError extends Error {
   }
 }
 
+const delay = (ms = 750) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const authHeader = () => ({
   Authorization: `Bearer ${lencoConfig.secretKey}`,
 });
 
 export const verifyCollection = async (reference: string): Promise<VerifyCollectionResponse> => {
+  if (lencoConfig.mockMode) {
+    await delay();
+    const now = new Date().toISOString();
+    return {
+      status: true,
+      message: 'Mock verification succeeded',
+      data: {
+        id: `mock-${reference}`,
+        initiatedAt: now,
+        completedAt: now,
+        amount: '0',
+        currency: lencoConfig.currency,
+        reference,
+        status: 'successful',
+        bearer: 'merchant',
+      },
+    };
+  }
+
   if (!lencoConfig.secretKey) {
     throw new LencoClientError('Lenco secret key is not configured.');
   }
@@ -71,6 +92,20 @@ interface CreateTransferPayload {
 }
 
 export const createTransfer = async (payload: CreateTransferPayload) => {
+  if (lencoConfig.mockMode) {
+    await delay();
+    return {
+      status: true,
+      message: 'Mock transfer initiated',
+      data: {
+        reference: payload.reference,
+        amount: payload.amount,
+        currency: payload.currency || lencoConfig.currency,
+        status: 'successful',
+      },
+    };
+  }
+
   if (!lencoConfig.secretKey) {
     throw new LencoClientError('Lenco secret key is not configured.');
   }

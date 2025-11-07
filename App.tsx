@@ -25,10 +25,11 @@ import OrganizerTiers from './components/OrganizerTiers';
 import SubscriptionModal from './components/SubscriptionModal';
 import Messaging from './components/Messaging';
 import { getPlatformStats, getAdminEvents, updateEventStatus, updateEventFeatured } from './services/adminService';
+import { loadStoredUser, storeUserSession, clearStoredSession } from './services/sessionService';
 
 const App: React.FC = () => {
   // Global State
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => loadStoredUser());
   const [events, setEvents] = useState<Event[]>([]);
   const [tickets, setTickets] = useState<(Ticket & { event: Event })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -118,6 +119,7 @@ const App: React.FC = () => {
   // Event Handlers
   const handleLoginSuccess = (loggedInUser: User) => {
     setUser(loggedInUser);
+    storeUserSession(loggedInUser);
     setToast({ message: `Welcome back, ${loggedInUser.name}!`, type: 'success' });
   };
 
@@ -151,6 +153,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     setUser(null);
+    clearStoredSession();
   };
   
   const handleOpenSubscriptionModal = () => {
@@ -166,6 +169,7 @@ const App: React.FC = () => {
   
   const handleSubscriptionSuccess = async (updatedUser: User) => {
     setUser(updatedUser);
+    storeUserSession(updatedUser);
     setToast({ message: 'Subscription successfully upgraded to Pro!', type: 'success' });
     
     // Refetch events to update any data related to the user's new subscription tier

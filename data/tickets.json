@@ -1,3 +1,11 @@
 {
-  "tickets": []
+  "tickets": [
+    {
+      "ticketId": "tkt-1762502257179-qhtyx",
+      "eventId": "evt-cb09b0ea-0a9f-4603-8c92-e6ce61291f8b",
+      "userId": "4cc50cdb-d5f9-4407-9cb2-cdf90de185e2",
+      "purchaseDate": "2025-11-07T07:57:37.179Z",
+      "status": "valid"
+    }
+  ]
 }

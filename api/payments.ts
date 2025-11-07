@@ -145,6 +145,7 @@ export async function handleCreatePaymentSession(req: { body: PaymentSessionBody
         phone: customer?.phone,
       },
       widgetUrl: lencoConfig.widgetUrl,
+      mockMode: lencoConfig.mockMode,
     }),
     {
       status: 201,
