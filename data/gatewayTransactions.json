@@ -399,6 +399,70 @@
         "cardDetails": null
       },
       "ticketId": "tkt-1762502257179-qhtyx"
+    },
+    {
+      "externalId": "478ce136-1189-457a-9058-808607d4ef80",
+      "reference": "ticket-1762503826994-y5wz2w",
+      "purpose": "ticket",
+      "eventId": "evt-cb09b0ea-0a9f-4603-8c92-e6ce61291f8b",
+      "userId": "6c732e33-6f37-4275-9abd-df8139e1cf5e",
+      "organizerId": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "succeeded",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Food Market",
+        "organizerId": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Food Market"
+      },
+      "id": "txn_462ada91-08f3-4591-bc14-5a1922736816",
+      "createdAt": "2025-11-07T08:23:46.994Z",
+      "updatedAt": "2025-11-07T08:24:40.248Z",
+      "lencoReference": "2531104579",
+      "fee": 0.01,
+      "bearer": "merchant",
+      "channel": "mobile-money",
+      "rawResponse": {
+        "id": "478ce136-1189-457a-9058-808607d4ef80",
+        "initiatedAt": "2025-11-07T08:23:49.482Z",
+        "completedAt": "2025-11-07T08:24:34.836Z",
+        "amount": "1.00",
+        "fee": "0.01",
+        "bearer": "merchant",
+        "currency": "ZMW",
+        "reference": "ticket-1762503826994-y5wz2w",
+        "lencoReference": "2531104579",
+        "type": "mobile-money",
+        "status": "successful",
+        "source": "api",
+        "reasonForFailure": null,
+        "settlementStatus": "settled",
+        "settlement": {
+          "id": "266453ae-caac-4e44-b1db-b2e51e7f28c1",
+          "amountSettled": "0.99",
+          "currency": "ZMW",
+          "createdAt": "2025-11-07T08:24:34.891Z",
+          "settledAt": "2025-11-07T08:24:35.016Z",
+          "status": "settled",
+          "type": "instant",
+          "accountId": "d901de95-1bd3-410c-a0ac-897e4636adb2"
+        },
+        "mobileMoneyDetails": {
+          "country": "zm",
+          "phone": "0777098622",
+          "operator": "airtel",
+          "accountName": "Kaungu Mufwaya",
+          "operatorTransactionId": "MP251107.1024.L29108"
+        },
+        "bankAccountDetails": null,
+        "cardDetails": null
+      },
+      "ticketId": "tkt-1762503880235-i5u1o"
     }
   ]
 }

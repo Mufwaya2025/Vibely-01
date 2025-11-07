@@ -12,7 +12,8 @@ interface TicketViewModalProps {
 const TicketViewModal: React.FC<TicketViewModalProps> = ({ ticket, onClose, userLocation }) => {
   if (!ticket) return null;
   
-  const isScanned = ticket.status === 'scanned';
+  const isScanned = ticket.status === 'scanned' || ticket.status === 'used';
+  const qrValue = ticket.code ?? ticket.ticketId;
 
   const formattedDate = new Intl.DateTimeFormat('en-US', {
     dateStyle: 'full',
@@ -43,7 +44,7 @@ const TicketViewModal: React.FC<TicketViewModalProps> = ({ ticket, onClose, user
         <div className="p-8 flex flex-col items-center">
           <div className="bg-white p-4 rounded-lg shadow-inner relative">
             <QRCode
-              value={ticket.ticketId}
+              value={qrValue}
               size={192}
               fgColor={isScanned ? "#D1D5DB" : "#000000"} // gray-300 if scanned
               bgColor="#FFFFFF"

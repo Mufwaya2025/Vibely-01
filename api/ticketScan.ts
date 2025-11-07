@@ -37,6 +37,8 @@ export async function handleTicketScan(req: {
     let scanResult: TicketScanResult;
     let message: string;
 
+    let updatedTicket: Ticket | null = null;
+
     if (!ticket) {
       scanResult = 'NOT_FOUND';
       message = 'Ticket not found';
@@ -52,9 +54,7 @@ export async function handleTicketScan(req: {
     } else if (ticket.status === 'unused' || ticket.status === 'valid') {
       scanResult = 'VALID';
       message = 'Ticket accepted for entry';
-      
-      // Update ticket status to used
-      db.tickets.markAsUsed(ticket.ticketId);
+      updatedTicket = db.tickets.markAsUsed(ticket.ticketId);
     } else {
       scanResult = 'EXPIRED';
       message = 'Ticket is expired or invalid';
@@ -133,12 +133,14 @@ export async function handleTicketScan(req: {
       }
     };
 
-    if (ticket) {
+    const ticketForResponse = updatedTicket ?? ticket ?? null;
+
+    if (ticketForResponse) {
       response.ticket = {
-        id: ticket.ticketId,  // Use the original field name
-        code: ticket.code || ticket.ticketId,
-        status: ticket.status,
-        holder_name: ticket.holderName || ''
+        id: ticketForResponse.ticketId,
+        code: ticketForResponse.code || ticketForResponse.ticketId,
+        status: ticketForResponse.status,
+        holder_name: ticketForResponse.holderName || ''
       };
     }
 

@@ -5,6 +5,14 @@
       "eventId": "evt-cb09b0ea-0a9f-4603-8c92-e6ce61291f8b",
       "userId": "4cc50cdb-d5f9-4407-9cb2-cdf90de185e2",
       "purchaseDate": "2025-11-07T07:57:37.179Z",
+      "status": "scanned",
+      "scanTimestamp": "2025-11-07T08:50:36.094Z"
+    },
+    {
+      "ticketId": "tkt-1762503880235-i5u1o",
+      "eventId": "evt-cb09b0ea-0a9f-4603-8c92-e6ce61291f8b",
+      "userId": "6c732e33-6f37-4275-9abd-df8139e1cf5e",
+      "purchaseDate": "2025-11-07T08:24:40.235Z",
       "status": "valid"
     }
   ]

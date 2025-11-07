@@ -95,8 +95,12 @@ export const ticketsStore = {
   },
   
   findByCode(ticketCode: string): Ticket | null {
-    // For compatibility with device scanning functionality
-    return getCache().find((ticket) => ticket.code === ticketCode) ?? null;
+    // Support both QR-specific codes and legacy ticket IDs.
+    return (
+      getCache().find(
+        (ticket) => ticket.code === ticketCode || ticket.ticketId === ticketCode
+      ) ?? null
+    );
   },
 
   findAll(): Ticket[] {
@@ -112,8 +116,11 @@ export const ticketsStore = {
       }
     }
 
+    const resolvedCode = newTicket.code ?? newTicket.ticketId;
+
     const ticket: Ticket = {
       ...newTicket,
+      code: resolvedCode,
       purchaseDate: newTicket.purchaseDate || new Date().toISOString(),
       status: newTicket.status || 'valid',
     };
@@ -139,7 +146,10 @@ export const ticketsStore = {
   },
 
   markAsUsed(ticketId: string): Ticket | null {
-    // For compatibility with original API and new functionality
-    return this.update(ticketId, { status: 'used', scanTimestamp: new Date().toISOString() });
+    // Normalize to used status and capture timestamp
+    return this.update(ticketId, {
+      status: 'used',
+      scanTimestamp: new Date().toISOString(),
+    });
   },
 };

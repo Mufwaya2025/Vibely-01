@@ -22,7 +22,7 @@
       "reviewCount": 0,
       "averageRating": 0,
       "ticketsSold": 0,
-      "status": "draft",
+      "status": "published",
       "flagCount": 0,
       "isFeatured": false,
       "organizer": {
