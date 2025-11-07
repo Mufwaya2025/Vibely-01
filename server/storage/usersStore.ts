@@ -21,7 +21,7 @@ interface PersistedUsers {
   users: StoredUser[];
 }
 
-const DEFAULT_PASSWORD = 'Password99!!';
+const DEFAULT_PASSWORD = 'ew0fwcxs';
 const DEFAULT_HASH_ROUNDS = 10;
 
 const seedUsers = (): StoredUser[] =>
