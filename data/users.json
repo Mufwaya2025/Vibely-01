@@ -15,10 +15,10 @@
       "passwordHash": "$2a$10$FAQqZN9yWeajHEV5nyYZ9.2zZoClQC2lAUL3Rev98untdd7WPm/0G"
     },
     {
-      "id": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+      "id": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
       "name": "Mufwaya Kaungu",
       "email": "mufwaya@outlook.com",
-      "passwordHash": "$2a$10$vTKM.mP3iMIEyBTgqmnaeufyIrIZipMH5HvZOh467Ia/41h9cZR.m",
+      "passwordHash": "$2a$10$keSEp./l.zUrwg8Tsm7eqOVsIQPvojvNFrKESr0ZDzMs.LrX/oqI.",
       "role": "manager",
       "status": "active",
       "interests": [],
@@ -29,10 +29,10 @@
       ]
     },
     {
-      "id": "4cc50cdb-d5f9-4407-9cb2-cdf90de185e2",
+      "id": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
       "name": "Mufwaya Kaungu",
       "email": "mufwaya@yahoo.com",
-      "passwordHash": "$2a$10$so9Q21zGvFEvKcxDvC1zW.G5s3FolpVy/cYDZNz.mgv/6/5aXni2e",
+      "passwordHash": "$2a$10$/4EDQn/2OT6qeRIGnW73gOr2V/872NqtuItFRCPTfqB3cuO2f2BVq",
       "role": "attendee",
       "status": "active",
       "interests": [],
