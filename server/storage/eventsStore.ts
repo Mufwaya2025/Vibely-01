@@ -102,8 +102,9 @@ const getCache = (): StoredEvent[] => {
 };
 
 const setCache = (events: StoredEvent[]) => {
-  cache = events;
-  persist(events);
+  const { events: normalized } = normalizeEvents(events);
+  cache = normalized;
+  persist(normalized);
 };
 
 export const eventsStore = {
@@ -119,9 +120,12 @@ export const eventsStore = {
     return [...getCache()];
   },
 
-  create(data: Omit<StoredEvent, 'id' | 'ticketsSold' | 'reviewCount' | 'averageRating'> & { id: string }): StoredEvent {
+  create(
+    data: Omit<StoredEvent, 'id' | 'ticketsSold' | 'reviewCount' | 'averageRating'> & { id?: string }
+  ): StoredEvent {
     const newEvent: StoredEvent = {
       ...data,
+      id: data.id ?? `evt-${randomUUID()}`,
       ticketsSold: 0,
       reviewCount: 0,
       averageRating: 0,

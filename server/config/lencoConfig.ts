@@ -17,6 +17,9 @@ const resolvedWidgetUrl =
     ? SANDBOX_WIDGET_URL
     : DEFAULT_WIDGET_URL);
 
+const resolveMockMode = () =>
+  (process.env.LENCO_USE_MOCK_GATEWAY ?? '').toLowerCase() === 'true';
+
 export const lencoConfig = {
   publicKey: process.env.LENCO_PUBLIC_KEY || '',
   secretKey: process.env.LENCO_SECRET_KEY || '',
@@ -26,9 +29,10 @@ export const lencoConfig = {
   locale: 'zm',
   withdrawSourceAccountId: process.env.LENCO_WITHDRAW_SOURCE_ACCOUNT_ID || '',
   environment: LENCO_ENV === 'sandbox' || LENCO_ENV === 'development' ? 'sandbox' : 'production',
+  mockMode: resolveMockMode(),
 };
 
 export const isLencoConfigured = () =>
-  Boolean(lencoConfig.publicKey && lencoConfig.secretKey);
+  lencoConfig.mockMode || Boolean(lencoConfig.publicKey && lencoConfig.secretKey);
 
 export const getLencoWidgetUrl = () => lencoConfig.widgetUrl;
