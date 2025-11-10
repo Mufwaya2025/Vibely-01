@@ -33,6 +33,27 @@ app.use(
 app.use(express.json({ limit: jsonLimit }));
 app.use(express.urlencoded({ extended: true }));
 
+// Set Content Security Policy header for security
+app.use((req, res, next) => {
+  // Define the Content Security Policy
+  let cspHeader = 
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' translate.googleapis.com translate.google.com www.google.com www.gstatic.com chrome-extension://bfdogplmndidlpjfhoijckpakkdjkkil/ https://pay.lenco.co https://accounts.google.com/gsi/client https://cdn.tailwindcss.com; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com https://accounts.google.com; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "img-src 'self' data: https:; " +
+    "connect-src 'self' https: http://localhost:4000; " +
+    "media-src 'self' blob:; " +  // Added for camera access
+    "camera 'self'; " +           // Added for camera permissions
+    "microphone 'self'; " +       // Added for microphone permissions
+    "frame-src 'self' https://pay.lenco.co https://accounts.google.com; " +
+    "object-src 'none'; " +
+    "base-uri 'self';";
+
+  res.setHeader('Content-Security-Policy', cspHeader);
+  next();
+});
+
 // Serve static files from the dist directory in production
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.resolve(__dirname, '../dist')));
