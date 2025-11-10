@@ -80,6 +80,8 @@ export interface Ticket {
   holderEmail?: string;
   createdAt: string;
   usedAt?: string;
+  tierId?: string;
+  tierName?: string;
 }
 
 export interface StaffUser {

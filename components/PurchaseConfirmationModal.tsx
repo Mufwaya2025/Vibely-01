@@ -7,7 +7,7 @@ import { processPayment, getPaymentDetails, verifyPaymentReference } from "../se
 interface PurchaseConfirmationModalProps {
   event: Event | null;
   onClose: () => void;
-  onPurchaseSuccess: (event: Event, details: PaymentDetails, save: boolean, transactionId: string) => void;
+  onPurchaseSuccess: (event: Event, details: PaymentDetails, save: boolean, transactionId: string, ticketTierId?: string) => void;
   user: User;
 }
 
@@ -42,6 +42,23 @@ const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ e
     );
   };
 
+  // Add state for ticket tier selection
+  const [selectedTicketTier, setSelectedTicketTier] = useState<string | null>(null);
+
+  // Initialize selected tier if there are tiers available
+  useEffect(() => {
+    if (event?.ticketTiers && event.ticketTiers.length > 0) {
+      // Default to the first available tier
+      setSelectedTicketTier(event.ticketTiers[0].id);
+    } else {
+      // If no tiers, use null which means the default event price
+      setSelectedTicketTier(null);
+    }
+  }, [event]);
+
+  const selectedTier = event?.ticketTiers?.find(tier => tier.id === selectedTicketTier) || null;
+  const currentAmount = selectedTier ? selectedTier.price : event?.price;
+
   const handleConfirmPurchase = async () => {
     if (selectedMethods.length === 0) {
       setError('Select at least one payment channel.');
@@ -63,12 +80,17 @@ const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ e
       const result = await processPayment({
         purpose: 'ticket',
         userId: user.id,
-        amount: event.price,
+        amount: currentAmount,
         currency: 'ZMW',
         eventId: event.id,
-        metadata: { eventTitle: event.title, organizerId: event.organizer.id },
+        metadata: { 
+          eventTitle: event.title, 
+          organizerId: event.organizer.id,
+          ticketTierId: selectedTicketTier, // Include the selected tier in metadata
+          ticketTierName: selectedTier?.name
+        },
         paymentMethods: selectedMethods,
-        label: `Ticket for ${event.title}`,
+        label: `Ticket for ${event.title}${selectedTier ? ` (${selectedTier.name})` : ''}`,
         customer: {
           firstName,
           lastName,
@@ -87,7 +109,7 @@ const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ e
         if (saveDetails) {
           savePaymentDetails(details);
         }
-        onPurchaseSuccess(event, details, saveDetails, result.transactionId);
+        onPurchaseSuccess(event, details, saveDetails, result.transactionId, selectedTicketTier);
       } else if (result.status === 'pending') {
         setLastReference(reference);
         setError('');
@@ -108,6 +130,33 @@ const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ e
       setIsProcessing(false);
     }
   };
+
+const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ event, onClose, onPurchaseSuccess, user }) => {
+  const [selectedMethods, setSelectedMethods] = useState<PaymentMethod[]>(DEFAULT_PAYMENT_METHODS);
+  const [mobileMoneyPhone, setMobileMoneyPhone] = useState('');
+  const [saveDetails, setSaveDetails] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
+  const [lastReference, setLastReference] = useState<string | null>(null);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  // Add state for ticket tier selection
+  const [selectedTicketTier, setSelectedTicketTier] = useState<string | null>(null);
+
+  // Initialize selected tier if there are tiers available
+  useEffect(() => {
+    if (event?.ticketTiers && event.ticketTiers.length > 0) {
+      // Default to the first available tier
+      setSelectedTicketTier(event.ticketTiers[0].id);
+    } else {
+      // If no tiers, use null which means the default event price
+      setSelectedTicketTier(null);
+    }
+  }, [event]);
+
+  const selectedTier = event?.ticketTiers?.find(tier => tier.id === selectedTicketTier) || null;
+  const currentAmount = selectedTier ? selectedTier.price : event?.price;
 
   return (
     <div
@@ -134,14 +183,53 @@ const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ e
             </button>
           </div>
 
-          <div className="mt-4 bg-gray-50 p-4 rounded-lg flex items-center">
-            <img src={event.imageUrl} alt={event.title} className="w-16 h-16 rounded-md object-cover mr-4" />
-            <div>
-              <h3 className="font-bold text-gray-800">{event.title}</h3>
-              <p className="text-sm text-gray-600">{event.location}</p>
-              <p className="text-xs text-gray-500">{new Date(event.date).toLocaleString()}</p>
+          <div className="mt-4 bg-gray-50 p-4 rounded-lg">
+            <div className="flex items-center">
+              <img src={event.imageUrl} alt={event.title} className="w-16 h-16 rounded-md object-cover mr-4" />
+              <div>
+                <h3 className="font-bold text-gray-800">{event.title}</h3>
+                <p className="text-sm text-gray-600">{event.location}</p>
+                <p className="text-xs text-gray-500">{new Date(event.date).toLocaleString()}</p>
+              </div>
+              <p className="ml-auto font-bold text-lg text-purple-600">{formatPrice(currentAmount)}</p>
             </div>
-            <p className="ml-auto font-bold text-lg text-purple-600">{formatPrice(event.price)}</p>
+
+            {/* Ticket tier selection */}
+            {event.ticketTiers && event.ticketTiers.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Select Ticket Type</h3>
+                <div className="space-y-2">
+                  {event.ticketTiers.map((tier) => (
+                    <label 
+                      key={tier.id}
+                      className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${
+                        selectedTicketTier === tier.id
+                          ? 'border-purple-500 bg-purple-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="ticketTier"
+                        value={tier.id}
+                        checked={selectedTicketTier === tier.id}
+                        onChange={() => setSelectedTicketTier(tier.id)}
+                        className="h-4 w-4 text-purple-600 focus:ring-purple-500"
+                      />
+                      <div className="ml-3 flex-1">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-gray-800">{tier.name}</span>
+                          <span className="font-bold text-purple-600">{formatPrice(tier.price)}</span>
+                        </div>
+                        {tier.benefits && (
+                          <p className="text-xs text-gray-600 mt-1">{tier.benefits}</p>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-6 space-y-4">
@@ -284,7 +372,7 @@ const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ e
                 Opening Lenco checkout...
               </>
             ) : (
-              `Pay ${formatPrice(event.price)} with Lenco`
+              `Pay ${formatPrice(currentAmount)} with Lenco`
             )}
           </button>
         </div>
@@ -294,6 +382,3 @@ const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ e
 };
 
 export default PurchaseConfirmationModal;
-
-
-

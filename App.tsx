@@ -209,10 +209,11 @@ const App: React.FC = () => {
     event: Event,
     details: PaymentDetails,
     shouldSave: boolean,
-    transactionId: string
+    transactionId: string,
+    ticketTierId?: string
   ) => {
     if (!user) return;
-    const newTicket = await createTicket(event, user);
+    const newTicket = await createTicket(event, user, ticketTierId);
     setTickets(prev => [...prev, { ...newTicket, event }]);
     setActiveModal(null);
     setToast({ message: `Successfully purchased ticket for ${event.title}!`, type: 'success' });
@@ -420,18 +421,33 @@ const App: React.FC = () => {
         purchasedTicketsCount={tickets.length}
         onOpenMessaging={user ? () => {
           // For now, we'll need to implement a contacts list or direct messaging
-          // For demo, let's hardcode a potential contact (the first manager we find)
+          // For demo, let's use a more realistic approach
           // In a real app, this would open a contacts/messaging interface
-          const defaultManager = {
-            id: 'demo-manager',
-            name: 'Demo Manager',
-            email: 'demo@manager.com',
-            role: 'manager' as const,
-            status: 'active' as const,
-            interests: [],
-            attendedEvents: []
-          };
-          openMessaging(defaultManager);
+          if (events.length > 0) {
+            const firstEventOrganizer = events[0].organizer;
+            const organizerUser: User = {
+              id: firstEventOrganizer.id,
+              name: firstEventOrganizer.name,
+              email: 'organizer@example.com', // Default email since organizer doesn't have email in the event object
+              role: 'manager' as const,
+              status: 'active' as const,
+              interests: [],
+              attendedEvents: []
+            };
+            openMessaging(organizerUser);
+          } else {
+            // Default fallback recipient
+            const defaultManager = {
+              id: 'admin-1',
+              name: 'Admin User',
+              email: 'admin@example.com',
+              role: 'admin' as const,
+              status: 'active' as const,
+              interests: [],
+              attendedEvents: []
+            };
+            openMessaging(defaultManager);
+          }
         } : undefined}
       />
       

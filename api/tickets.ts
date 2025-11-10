@@ -63,12 +63,21 @@ export async function handleGetTicketsForEvent(req: { query: { eventId: string }
 
 /**
  * Handles the creation of a new ticket.
- * @param {Request} req - Contains the event and user details in the body.
+ * @param {Request} req - Contains the event, user details, and optionally ticketTierId in the body.
  * @returns {Response} The newly created ticket object.
  */
-export async function handleCreateTicket(req: { body: { event: Event, user: User } }) {
-    const { event, user } = req.body;
+export async function handleCreateTicket(req: { body: { event: Event, user: User, ticketTierId?: string } }) {
+    const { event, user, ticketTierId } = req.body;
     await new Promise(resolve => setTimeout(resolve, 200));
+
+    // If a ticket tier is specified, use that tier's details; otherwise use the event default
+    let selectedTier = null;
+    if (ticketTierId && event.ticketTiers) {
+        selectedTier = event.ticketTiers.find(tier => tier.id === ticketTierId);
+        if (!selectedTier) {
+            return new Response(JSON.stringify({ message: 'Invalid ticket tier selected' }), { status: 400 });
+        }
+    }
 
     const ticketId = `tkt-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     const newTicket: Ticket = {
@@ -80,6 +89,11 @@ export async function handleCreateTicket(req: { body: { event: Event, user: User
         code: ticketId,
         holderName: user.name,
         holderEmail: user.email,
+        // Add tier information to the ticket if available
+        ...(selectedTier && {
+            tierId: selectedTier.id,
+            tierName: selectedTier.name,
+        }),
     };
 
     const createdTicket = db.tickets.create(newTicket);
