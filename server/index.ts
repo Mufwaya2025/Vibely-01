@@ -35,13 +35,26 @@ app.use(express.urlencoded({ extended: true }));
 // Set Content Security Policy header for security
 app.use((req, res, next) => {
   // Define the Content Security Policy
+  const connectSources = [
+    "'self'",
+    'https://vibelyapp.live:4000',
+    'http://localhost:4000',
+    'https://fonts.googleapis.com',
+    'https://fonts.gstatic.com',
+    'https://accounts.google.com',
+    'https://www.gstatic.com',
+    'https://pay.lenco.co',
+    'wss:',
+    'ws:',
+  ].join(' ');
+
   let cspHeader = 
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' translate.googleapis.com translate.google.com www.google.com www.gstatic.com chrome-extension://bfdogplmndidlpjfhoijckpakkdjkkil/ https://pay.lenco.co https://accounts.google.com/gsi/client; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "img-src 'self' data: https:; " +
-    "connect-src 'self' https: http://localhost:4000 wss: ws:; " +
+    `connect-src ${connectSources}; ` +
     "media-src 'self' blob:; " +
     "frame-src 'self' https://pay.lenco.co https://accounts.google.com; " +
     "object-src 'none'; " +
