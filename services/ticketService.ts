@@ -13,10 +13,10 @@ export const getTicketsForUser = async (userId: string): Promise<(Ticket & { eve
 /**
  * Creates a new ticket via the API.
  */
-export const createTicket = async (event: Event, user: User): Promise<Ticket> => {
+export const createTicket = async (event: Event, user: User, ticketTierId?: string): Promise<Ticket> => {
   const response = await apiFetch('/api/tickets', {
     method: 'POST',
-    body: { event, user },
+    body: { event, user, ticketTierId },
   });
   if (!response.ok) throw new Error('Failed to create ticket');
   return response.json();
