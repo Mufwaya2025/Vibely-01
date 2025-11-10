@@ -9,7 +9,9 @@ import {
   onUserOnline, 
   onUserOffline, 
   markMessageAsRead,
-  disconnectFromMessaging
+  disconnectFromMessaging,
+  requestUserStatus,
+  onUserStatusResponse
 } from '../services/messagingService';
 
 interface MessagingProps {
@@ -31,6 +33,11 @@ const Messaging: React.FC<MessagingProps> = ({ currentUser, recipient, onClose }
       try {
         await connectToMessaging(currentUser.id);
         setIsConnecting(false);
+        
+        // Request the current status of the recipient after connecting
+        setTimeout(() => {
+          requestUserStatus(recipient.id);
+        }, 500); // Small delay to ensure connection is established
       } catch (error) {
         console.error('Failed to connect to messaging:', error);
         setIsConnecting(false);
@@ -62,10 +69,17 @@ const Messaging: React.FC<MessagingProps> = ({ currentUser, recipient, onClose }
       }
     };
 
+    const handleUserStatusResponse = (data: { userId: string, isOnline: boolean }) => {
+      if (data.userId === recipient.id) {
+        setIsRecipientOnline(data.isOnline);
+      }
+    };
+
     onMessageReceived(handleReceiveMessage);
     onMessageSent(handleMessageSent);
     onUserOnline(handleUserOnline);
     onUserOffline(handleUserOffline);
+    onUserStatusResponse(handleUserStatusResponse);
 
     // Clean up on unmount
     return () => {
