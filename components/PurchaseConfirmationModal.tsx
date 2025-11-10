@@ -2,7 +2,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { Event, PaymentDetails, PaymentMethod, User } from "../types";
 import { formatPrice } from "../utils/tickets";
-import { processPayment, getPaymentDetails, verifyPaymentReference } from "../services/paymentService";
+import { processPayment, getPaymentDetails, savePaymentDetails, verifyPaymentReference } from "../services/paymentService";
 
 interface PurchaseConfirmationModalProps {
   event: Event | null;
@@ -353,8 +353,5 @@ const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ e
     </div>
   );
 };
-
-  // component code here
-}; // this closes the component
 
 export default PurchaseConfirmationModal;
