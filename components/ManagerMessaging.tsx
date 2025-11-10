@@ -10,6 +10,7 @@ import {
   markMessageAsRead,
   disconnectFromMessaging,
 } from '../services/messagingService';
+import { playMessageFeedback } from '../utils/feedback';
 
 interface ManagerMessagingProps {
   user: User;
@@ -53,6 +54,9 @@ const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose }) =>
 
     const handleReceiveMessage = (message: Message) => {
       const activeId = activeConversationRef.current;
+      if (message.senderId !== user.id) {
+        playMessageFeedback('incoming');
+      }
       setConversations(prev => {
         const existing = prev.find(c => c.userId === message.senderId);
         if (existing) {
@@ -117,6 +121,10 @@ const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose }) =>
           ...prev,
         ];
       });
+
+      if (message.senderId === user.id) {
+        playMessageFeedback('outgoing');
+      }
     };
 
     const handleUserOnline = (userId: string) => {
