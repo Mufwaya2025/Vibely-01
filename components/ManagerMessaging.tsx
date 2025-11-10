@@ -72,7 +72,7 @@ const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose }) =>
               userName: message.senderName,
               lastMessage: message.content,
               lastMessageTime: message.timestamp,
-              unread: c.userId === activeConversation ? 0 : 1,
+              unread: message.senderId === activeConversation ? 0 : 1,
               isOnline: true
             },
             ...prev
