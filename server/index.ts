@@ -21,13 +21,12 @@ const allowedOrigins = clientOrigin
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+const allowAnyOrigin = allowedOrigins.length === 0 || allowedOrigins.includes('*');
 
 app.use(
   cors({
-    origin:
-      allowedOrigins.length === 0 || allowedOrigins.includes('*')
-        ? true
-        : allowedOrigins,
+    origin: allowAnyOrigin ? true : allowedOrigins,
+    credentials: !allowAnyOrigin,
   })
 );
 app.use(express.json({ limit: jsonLimit }));
@@ -42,7 +41,7 @@ app.use((req, res, next) => {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com https://accounts.google.com; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "img-src 'self' data: https:; " +
-    "connect-src 'self' https: http://localhost:4000; " +
+    "connect-src 'self' https: http://localhost:4000 wss: ws:; " +
     "media-src 'self' blob:; " +  // Added for camera access
     "camera 'self'; " +           // Added for camera permissions
     "microphone 'self'; " +       // Added for microphone permissions
@@ -62,9 +61,10 @@ if (process.env.NODE_ENV === 'production') {
 // Initialize Socket.IO
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
+    origin: allowAnyOrigin ? '*' : allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: !allowAnyOrigin,
+  },
 });
 
 // In-memory storage for demo purposes
