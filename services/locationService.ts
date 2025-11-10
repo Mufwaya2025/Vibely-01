@@ -1,5 +1,6 @@
 import { NominatimResult } from '../types';
 import { apiFetch } from '../utils/apiClient';
+import { saveLocationToStorage, loadLocationFromStorage } from './locationPersistenceService';
 
 /**
  * Gets the user's current geolocation (falls back to Lusaka CBD if unavailable).
@@ -27,10 +28,19 @@ export const getCurrentLocation = (): Promise<{ lat: number; lon: number } | nul
   return new Promise(async (resolve) => {
     if (!navigator.geolocation) {
       console.warn('Geolocation API unavailable. Falling back to Lusaka coordinates.');
-      resolve(FALLBACK_LOCATION);
+      // Try to get location from storage before falling back to default
+      const storedLocation = loadLocationFromStorage();
+      if (storedLocation) {
+        resolve(storedLocation);
+      } else {
+        resolve(FALLBACK_LOCATION);
+      }
       return;
     }
 
+    // First, try to load a previously stored location as a fallback
+    const storedLocation = loadLocationFromStorage();
+    
     // Check current permission state
     const permissionState = await checkGeolocationPermission();
     console.log('Geolocation permission state:', permissionState);
@@ -42,6 +52,8 @@ export const getCurrentLocation = (): Promise<{ lat: number; lon: number } | nul
           lat: position.coords.latitude,
           lon: position.coords.longitude
         });
+        // Save the location to storage for future use
+        saveLocationToStorage(position.coords.latitude, position.coords.longitude);
         resolve({
           lat: position.coords.latitude,
           lon: position.coords.longitude,
@@ -64,7 +76,12 @@ export const getCurrentLocation = (): Promise<{ lat: number; lon: number } | nul
             console.warn('An unknown error occurred.');
             break;
         }
-        resolve(FALLBACK_LOCATION);
+        // If we have a stored location, use it, otherwise use the fallback
+        if (storedLocation) {
+          resolve(storedLocation);
+        } else {
+          resolve(FALLBACK_LOCATION);
+        }
       },
       {
         enableHighAccuracy: true,
