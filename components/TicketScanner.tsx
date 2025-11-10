@@ -145,14 +145,15 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ eventId: _eventId, onTick
       if (deviceId) {
         return {
           deviceId: { exact: deviceId },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
+          facingMode: preferredFacing, // Add facingMode to help mobile devices choose the right camera
         };
       }
       return {
         facingMode: { ideal: preferredFacing },
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
+        width: { ideal: 1280, max: 1920 },
+        height: { ideal: 720, max: 1080 },
       };
     },
     [preferredFacing, selectedDeviceId]
@@ -269,12 +270,49 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ eventId: _eventId, onTick
       throw new Error('Camera access is not supported in this browser.');
     }
 
-    const constraints: MediaStreamConstraints = {
-      video: buildVideoConstraints(),
-      audio: false,
-    };
+    // Try multiple constraint configurations to improve mobile compatibility
+    const baseConstraints = buildVideoConstraints();
+    const constraintOptions = [
+      // Most specific constraints first
+      { video: baseConstraints, audio: false },
+      // Mobile-optimized constraints
+      { 
+        video: {
+          facingMode: baseConstraints.facingMode,
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 }
+        },
+        audio: false 
+      },
+      // Flexible constraints for older mobile browsers
+      { 
+        video: { facingMode: baseConstraints.facingMode }, 
+        audio: false 
+      },
+      // Last resort: completely flexible
+      { video: true, audio: false }
+    ];
 
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    let stream: MediaStream | null = null;
+    let successfulConstraints: MediaStreamConstraints | null = null;
+
+    // Try each constraint option until one works
+    for (const constraints of constraintOptions) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        successfulConstraints = constraints;
+        break; // If successful, break out of the loop
+      } catch (err) {
+        console.warn(`Failed to get camera access with constraints:`, constraints, err);
+        continue; // Try the next constraint option
+      }
+    }
+
+    // If no constraints worked, throw an error
+    if (!stream) {
+      throw new Error('Unable to access camera with any supported constraints. Please check permissions and try a different browser.');
+    }
+
     if (!scanningStateRef.current) {
       stream.getTracks().forEach((track) => track.stop());
       return;
@@ -291,10 +329,12 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ eventId: _eventId, onTick
       videoRef.current.playsInline = true;
       setVideoReady(false);
       try {
+        // On mobile, play() might fail if not triggered by user interaction
         await videoRef.current.play();
         setVideoReady(true);
       } catch (err) {
         console.error('Unable to start camera preview.', err);
+        // Don't return false here; sometimes autoplay fails but video still works
         setVideoReady(false);
       }
     }
@@ -325,10 +365,19 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ eventId: _eventId, onTick
       if (detectionMode === 'native') {
         await startCamera();
       } else {
-        const tempStream = await navigator.mediaDevices.getUserMedia({
-          video: buildVideoConstraints(),
+        // Try to get a minimal stream first to check permissions
+        const constraints = buildVideoConstraints();
+        // For mobile, try to be more flexible with constraints
+        const mobileConstraints: MediaStreamConstraints = {
+          video: {
+            facingMode: constraints.facingMode,
+            width: { ideal: 1024, max: 1920 },
+            height: { ideal: 768, max: 1080 }
+          },
           audio: false,
-        });
+        };
+
+        const tempStream = await navigator.mediaDevices.getUserMedia(mobileConstraints);
         tempStream.getTracks().forEach((track) => track.stop());
       }
       setCameraAccess('granted');
@@ -341,7 +390,15 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ eventId: _eventId, onTick
         setError('Camera permission denied. Enable access in your browser settings and try again.');
       } else {
         setCameraAccess('denied');
-        setError('Unable to access the camera. Ensure no other application is using it and try again.');
+        // Provide more specific error information for mobile
+        const errorMessage = (err as Error).message || String(err);
+        if (errorMessage.toLowerCase().includes('over') || errorMessage.toLowerCase().includes('secure')) {
+          setError('Camera access requires a secure context (HTTPS). Ensure you are accessing the site via HTTPS.');
+        } else if (errorMessage.toLowerCase().includes('constraint')) {
+          setError('Camera constraints not supported. Try a different browser or mobile device.');
+        } else {
+          setError('Unable to access the camera. Ensure no other application is using it and try again.');
+        }
       }
     } finally {
       requestInFlightRef.current = false;
