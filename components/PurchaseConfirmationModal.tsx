@@ -1,5 +1,5 @@
 // Updated PurchaseConfirmationModal component integrating Lenco payments.
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Event, PaymentDetails, PaymentMethod, User } from "../types";
 import { formatPrice } from "../utils/tickets";
 import { processPayment, getPaymentDetails, verifyPaymentReference } from "../services/paymentService";
@@ -130,33 +130,6 @@ const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ e
       setIsProcessing(false);
     }
   };
-
-const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ event, onClose, onPurchaseSuccess, user }) => {
-  const [selectedMethods, setSelectedMethods] = useState<PaymentMethod[]>(DEFAULT_PAYMENT_METHODS);
-  const [mobileMoneyPhone, setMobileMoneyPhone] = useState('');
-  const [saveDetails, setSaveDetails] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState('');
-  const [lastReference, setLastReference] = useState<string | null>(null);
-  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
-  const [isVerifying, setIsVerifying] = useState(false);
-
-  // Add state for ticket tier selection
-  const [selectedTicketTier, setSelectedTicketTier] = useState<string | null>(null);
-
-  // Initialize selected tier if there are tiers available
-  useEffect(() => {
-    if (event?.ticketTiers && event.ticketTiers.length > 0) {
-      // Default to the first available tier
-      setSelectedTicketTier(event.ticketTiers[0].id);
-    } else {
-      // If no tiers, use null which means the default event price
-      setSelectedTicketTier(null);
-    }
-  }, [event]);
-
-  const selectedTier = event?.ticketTiers?.find(tier => tier.id === selectedTicketTier) || null;
-  const currentAmount = selectedTier ? selectedTier.price : event?.price;
 
   return (
     <div
