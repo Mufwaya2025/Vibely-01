@@ -6,6 +6,7 @@ import { savePaymentDetails, attachTicketToTransaction } from './services/paymen
 import { getAIRecommendations } from './services/geminiService';
 import { addFavoriteEvent, getFavoriteEvents, removeFavoriteEvent } from './services/favoriteService';
 import { getCurrentLocation } from './services/locationService';
+import { loadLocationFromStorage } from './services/locationPersistenceService';
 
 import Header from './components/Header';
 import EventCard from './components/EventCard';
@@ -83,8 +84,13 @@ const App: React.FC = () => {
         setUserLocation(location);
       } catch (err) {
         console.error("Failed to get current location:", err);
-        // Don't set an error state for location issues, just use fallback
-        setUserLocation({ lat: -15.4167, lon: 28.2833 }); // Lusaka coordinates as fallback
+        // Don't set an error state for location issues, just try to use stored location
+        const storedLocation = loadLocationFromStorage();
+        if (storedLocation) {
+          setUserLocation(storedLocation);
+        } else {
+          setUserLocation({ lat: -15.4167, lon: 28.2833 }); // Lusaka coordinates as fallback
+        }
       }
     };
     fetchLocation();
