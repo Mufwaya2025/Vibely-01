@@ -2,6 +2,25 @@ import { io, Socket } from 'socket.io-client';
 import { Message } from '../types';
 
 let socket: Socket | null = null;
+const noop = () => {};
+
+const resolveSocketBaseUrl = (): string | undefined => {
+  const env = (import.meta as any).env ?? {};
+  const configuredBase = (env.VITE_SOCKET_BASE_URL ?? env.VITE_API_BASE_URL ?? '').toString().trim();
+
+  if (configuredBase.length > 0) {
+    if (configuredBase.startsWith('http')) {
+      return configuredBase.replace(/\/$/, '');
+    }
+    if (typeof window !== 'undefined' && window.location) {
+      const origin = window.location.origin.replace(/\/$/, '');
+      const normalizedPath = configuredBase.startsWith('/') ? configuredBase : `/${configuredBase}`;
+      return `${origin}${normalizedPath}`.replace(/\/$/, '');
+    }
+  }
+
+  return typeof window !== 'undefined' ? window.location.origin : undefined;
+};
 
 export interface MessageData {
   receiverId: string;
@@ -17,11 +36,20 @@ export const connectToMessaging = (userId: string): Promise<Socket> => {
       return;
     }
 
-    socket = io(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}`, {
+    const env = (import.meta as any).env ?? {};
+    const socketPath = env.VITE_SOCKET_PATH ?? '/socket.io';
+    const baseUrl = resolveSocketBaseUrl();
+
+    const options = {
+      path: socketPath,
       auth: {
-        userId
-      }
-    });
+        userId,
+      },
+      withCredentials: true,
+      transports: ['websocket', 'polling'],
+    } as const;
+
+    socket = baseUrl ? io(baseUrl, options) : io(options);
 
     socket.on('connect', () => {
       console.log('Connected to messaging server');
@@ -44,34 +72,44 @@ export const sendMessage = (messageData: MessageData) => {
   }
 };
 
-export const onMessageReceived = (callback: (message: Message) => void) => {
-  if (socket) {
-    socket.on('receive-message', callback);
-  }
+export const onMessageReceived = (callback: (message: Message) => void): (() => void) => {
+  if (!socket) return noop;
+  socket.on('receive-message', callback);
+  return () => {
+    socket?.off('receive-message', callback);
+  };
 };
 
-export const onMessageSent = (callback: (message: Message) => void) => {
-  if (socket) {
-    socket.on('message-sent', callback);
-  }
+export const onMessageSent = (callback: (message: Message) => void): (() => void) => {
+  if (!socket) return noop;
+  socket.on('message-sent', callback);
+  return () => {
+    socket?.off('message-sent', callback);
+  };
 };
 
-export const onMessageRead = (callback: (messageId: string) => void) => {
-  if (socket) {
-    socket.on('message-read', callback);
-  }
+export const onMessageRead = (callback: (messageId: string) => void): (() => void) => {
+  if (!socket) return noop;
+  socket.on('message-read', callback);
+  return () => {
+    socket?.off('message-read', callback);
+  };
 };
 
-export const onUserOnline = (callback: (userId: string) => void) => {
-  if (socket) {
-    socket.on('user-online', callback);
-  }
+export const onUserOnline = (callback: (userId: string) => void): (() => void) => {
+  if (!socket) return noop;
+  socket.on('user-online', callback);
+  return () => {
+    socket?.off('user-online', callback);
+  };
 };
 
-export const onUserOffline = (callback: (userId: string) => void) => {
-  if (socket) {
-    socket.on('user-offline', callback);
-  }
+export const onUserOffline = (callback: (userId: string) => void): (() => void) => {
+  if (!socket) return noop;
+  socket.on('user-offline', callback);
+  return () => {
+    socket?.off('user-offline', callback);
+  };
 };
 
 // Request the current online status of a specific user
@@ -82,10 +120,12 @@ export const requestUserStatus = (userId: string) => {
 };
 
 // Listen for user status responses
-export const onUserStatusResponse = (callback: (data: { userId: string, isOnline: boolean }) => void) => {
-  if (socket) {
-    socket.on('user-status-response', callback);
-  }
+export const onUserStatusResponse = (callback: (data: { userId: string, isOnline: boolean }) => void): (() => void) => {
+  if (!socket) return noop;
+  socket.on('user-status-response', callback);
+  return () => {
+    socket?.off('user-status-response', callback);
+  };
 };
 
 export const markMessageAsRead = (messageId: string) => {

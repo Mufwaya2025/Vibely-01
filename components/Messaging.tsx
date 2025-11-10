@@ -5,7 +5,6 @@ import {
   sendMessage, 
   onMessageReceived, 
   onMessageSent, 
-  onMessageRead, 
   onUserOnline, 
   onUserOffline, 
   markMessageAsRead,
@@ -28,6 +27,8 @@ const Messaging: React.FC<MessagingProps> = ({ currentUser, recipient, onClose }
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const cleanupFns: Array<() => void> = [];
+
     // Connect to messaging service
     const connect = async () => {
       try {
@@ -49,8 +50,7 @@ const Messaging: React.FC<MessagingProps> = ({ currentUser, recipient, onClose }
     // Set up event listeners
     const handleReceiveMessage = (message: Message) => {
       setMessages(prev => [...prev, message]);
-      // Mark as read automatically when received
-      // markMessageAsRead(message.id);
+      markMessageAsRead(message.id);
     };
 
     const handleMessageSent = (message: Message) => {
@@ -75,14 +75,15 @@ const Messaging: React.FC<MessagingProps> = ({ currentUser, recipient, onClose }
       }
     };
 
-    onMessageReceived(handleReceiveMessage);
-    onMessageSent(handleMessageSent);
-    onUserOnline(handleUserOnline);
-    onUserOffline(handleUserOffline);
-    onUserStatusResponse(handleUserStatusResponse);
+    cleanupFns.push(onMessageReceived(handleReceiveMessage));
+    cleanupFns.push(onMessageSent(handleMessageSent));
+    cleanupFns.push(onUserOnline(handleUserOnline));
+    cleanupFns.push(onUserOffline(handleUserOffline));
+    cleanupFns.push(onUserStatusResponse(handleUserStatusResponse));
 
     // Clean up on unmount
     return () => {
+      cleanupFns.forEach(fn => fn && fn());
       disconnectFromMessaging();
     };
   }, [currentUser.id, recipient.id]);
