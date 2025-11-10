@@ -136,6 +136,13 @@ io.on('connection', (socket) => {
     socket.emit('message-sent', newMessage);
   });
 
+  // Handle request for user status
+  socket.on('request-user-status', (userId) => {
+    const isOnline = userSessions.some(session => session.userId === userId);
+    // Send the status response back to the requesting socket
+    socket.emit('user-status-response', { userId, isOnline });
+  });
+
   socket.on('mark-as-read', (messageId) => {
     const message = messages.find(m => m.id === messageId);
     if (message) {
