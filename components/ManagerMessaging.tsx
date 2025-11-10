@@ -5,12 +5,10 @@ import {
   sendMessage, 
   onMessageReceived, 
   onMessageSent, 
-  onMessageRead, 
   onUserOnline, 
   onUserOffline, 
   markMessageAsRead,
   disconnectFromMessaging,
-  getSocket
 } from '../services/messagingService';
 
 interface ManagerMessagingProps {
@@ -32,11 +30,17 @@ const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose }) =>
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [contacts, setContacts] = useState<User[]>([]);
+  const activeConversationRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    activeConversationRef.current = activeConversation;
+  }, [activeConversation]);
 
   // Initialize connection when component mounts
   useEffect(() => {
+    const cleanupFns: Array<() => void> = [];
+
     const initMessaging = async () => {
       try {
         await connectToMessaging(user.id);
@@ -47,112 +51,96 @@ const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose }) =>
     };
     initMessaging();
 
-    // Set up event listeners
     const handleReceiveMessage = (message: Message) => {
-      console.log('Received message:', message); // For debugging
-      // Update conversations list
+      const activeId = activeConversationRef.current;
       setConversations(prev => {
         const existing = prev.find(c => c.userId === message.senderId);
         if (existing) {
-          return prev.map(c => 
-            c.userId === message.senderId 
-              ? { 
-                  ...c, 
-                  lastMessage: message.content, 
+          return prev.map(c =>
+            c.userId === message.senderId
+              ? {
+                  ...c,
+                  lastMessage: message.content,
                   lastMessageTime: message.timestamp,
-                  unread: c.userId === activeConversation ? c.unread : c.unread + 1
-                } 
+                  unread: activeId === message.senderId ? c.unread : c.unread + 1,
+                }
               : c
           );
-        } else {
-          // Add new conversation if not existing
-          return [
-            {
-              userId: message.senderId,
-              userName: message.senderName,
-              lastMessage: message.content,
-              lastMessageTime: message.timestamp,
-              unread: message.senderId === activeConversation ? 0 : 1,
-              isOnline: true
-            },
-            ...prev
-          ];
         }
+        return [
+          {
+            userId: message.senderId,
+            userName: message.senderName,
+            lastMessage: message.content,
+            lastMessageTime: message.timestamp,
+            unread: activeId === message.senderId ? 0 : 1,
+            isOnline: true,
+          },
+          ...prev,
+        ];
       });
 
-      // If this is the active conversation, add to messages
-      if (message.senderId === activeConversation) {
+      if (message.senderId === activeId) {
         setMessages(prev => [...prev, message]);
-        // Mark as read when received in active conversation
         markMessageAsRead(message.id);
       }
     };
 
     const handleMessageSent = (message: Message) => {
-      console.log('Message sent:', message);
-      if (message.receiverId === activeConversation) {
+      const activeId = activeConversationRef.current;
+      if (message.receiverId === activeId) {
         setMessages(prev => [...prev, message]);
       }
-      
-      // Also update the conversation list with the sent message
+
       setConversations(prev => {
         const existing = prev.find(c => c.userId === message.receiverId);
         if (existing) {
-          return prev.map(c => 
-            c.userId === message.receiverId 
-              ? { 
-                  ...c, 
-                  lastMessage: message.content, 
+          return prev.map(c =>
+            c.userId === message.receiverId
+              ? {
+                  ...c,
+                  lastMessage: message.content,
                   lastMessageTime: message.timestamp,
-                  // unread count stays 0 since we're the sender
-                } 
+                }
               : c
           );
-        } else {
-          // Add to conversation list if replying to a new contact
-          return [
-            {
-              userId: message.receiverId,
-              userName: conversations.find(c => c.userId === message.receiverId)?.userName || 'User',
-              lastMessage: message.content,
-              lastMessageTime: message.timestamp,
-              unread: 0, // unread is 0 since we just sent the message
-              isOnline: true
-            },
-            ...prev
-          ];
         }
+        return [
+          {
+            userId: message.receiverId,
+            userName: existing?.userName ?? 'User',
+            lastMessage: message.content,
+            lastMessageTime: message.timestamp,
+            unread: 0,
+            isOnline: true,
+          },
+          ...prev,
+        ];
       });
     };
 
-    onMessageReceived(handleReceiveMessage);
-    onMessageSent(handleMessageSent);
-
-    // Set up online/offline status listeners
     const handleUserOnline = (userId: string) => {
-      setConversations(prev => 
-        prev.map(conv => 
-          conv.userId === userId ? { ...conv, isOnline: true } : conv
-        )
+      setConversations(prev =>
+        prev.map(conv => (conv.userId === userId ? { ...conv, isOnline: true } : conv))
       );
     };
 
     const handleUserOffline = (userId: string) => {
-      setConversations(prev => 
-        prev.map(conv => 
-          conv.userId === userId ? { ...conv, isOnline: false } : conv
-        )
+      setConversations(prev =>
+        prev.map(conv => (conv.userId === userId ? { ...conv, isOnline: false } : conv))
       );
     };
 
-    onUserOnline(handleUserOnline);
-    onUserOffline(handleUserOffline);
+    cleanupFns.push(onMessageReceived(handleReceiveMessage));
+    cleanupFns.push(onMessageSent(handleMessageSent));
+    cleanupFns.push(onUserOnline(handleUserOnline));
+    cleanupFns.push(onUserOffline(handleUserOffline));
 
-    // Clean up on unmount
     return () => {
+      cleanupFns.forEach(fn => fn && fn());
       disconnectFromMessaging();
     };
-  }, [user.id, activeConversation]);
+  }, [user.id]);
 
   // Load conversations when component mounts
   useEffect(() => {
@@ -168,7 +156,13 @@ const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose }) =>
 
   // Load messages when active conversation changes
   const loadMessages = (userId: string) => {
+    activeConversationRef.current = userId;
     setActiveConversation(userId);
+    setConversations(prev =>
+      prev.map(conv =>
+        conv.userId === userId ? { ...conv, unread: 0 } : conv
+      )
+    );
     // In a real app, fetch messages for this conversation from the API
     // For now, we'll just clear existing messages and start fresh
     setMessages([]);
