@@ -74,6 +74,20 @@ export const onUserOffline = (callback: (userId: string) => void) => {
   }
 };
 
+// Request the current online status of a specific user
+export const requestUserStatus = (userId: string) => {
+  if (socket && socket.connected) {
+    socket.emit('request-user-status', userId);
+  }
+};
+
+// Listen for user status responses
+export const onUserStatusResponse = (callback: (data: { userId: string, isOnline: boolean }) => void) => {
+  if (socket) {
+    socket.on('user-status-response', callback);
+  }
+};
+
 export const markMessageAsRead = (messageId: string) => {
   if (socket && socket.connected) {
     socket.emit('mark-as-read', messageId);
