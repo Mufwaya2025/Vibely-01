@@ -381,4 +381,7 @@ const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ e
   );
 };
 
+  // component code here
+}; // this closes the component
+
 export default PurchaseConfirmationModal;
