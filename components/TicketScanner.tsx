@@ -324,18 +324,42 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ eventId: _eventId, onTick
     activeDeviceIdRef.current = activeId ?? null;
 
     if (videoRef.current) {
+      // Ensure the video element is ready before setting the stream
       videoRef.current.srcObject = stream;
       videoRef.current.muted = true;
       videoRef.current.playsInline = true;
-      setVideoReady(false);
+      videoRef.current.setAttribute('controls', 'false');
+      videoRef.current.setAttribute('autoplay', 'true');
+      videoRef.current.setAttribute('preload', 'metadata');
+      
+      // Wait for the video element to be ready
+      await new Promise<void>((resolve) => {
+        videoRef.current!.onloadedmetadata = () => {
+          setVideoReady(true);
+          resolve();
+        };
+        videoRef.current!.oncanplay = () => {
+          setVideoReady(true);
+          resolve();
+        };
+        videoRef.current!.onplay = () => {
+          setVideoReady(true);
+          resolve();
+        };
+        // Set a timeout as fallback
+        setTimeout(() => {
+          setVideoReady(true);
+          resolve();
+        }, 1000);
+      });
+
       try {
-        // On mobile, play() might fail if not triggered by user interaction
+        // On mobile browsers, sometimes we need to wait a bit before calling play()
+        await new Promise(resolve => setTimeout(resolve, 100));
         await videoRef.current.play();
-        setVideoReady(true);
       } catch (err) {
         console.error('Unable to start camera preview.', err);
-        // Don't return false here; sometimes autoplay fails but video still works
-        setVideoReady(false);
+        setVideoReady(true); // Still set to true as the video might work without autoplay
       }
     }
 
