@@ -51,24 +51,20 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // If the request is successful, update the cache.
-        // This is important for the app shell files.
-        if (response && response.status === 200 && APP_SHELL_URLS.includes(requestUrl.pathname)) {
-            caches.open(CACHE_NAME).then(cache => {
-                cache.put(event.request, response.clone());
-            });
+        if (response && response.ok && APP_SHELL_URLS.includes(requestUrl.pathname)) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseClone);
+          });
         }
         return response;
       })
-      .catch(() => {
-        // If the network fails, try to serve from the cache.
-        return caches.match(event.request).then(cachedResponse => {
-            if (cachedResponse) {
-                return cachedResponse;
-            }
-            // If not in cache and network fails, there's not much we can do.
-            // A dedicated offline page could be returned here.
-        });
+      .catch(async () => {
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        return Response.error();
       })
   );
 });
