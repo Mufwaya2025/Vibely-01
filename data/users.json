@@ -55,6 +55,20 @@
       "authProviders": [
         "local"
       ]
+    },
+    {
+      "id": "fdc9ecc4-1d79-4b3a-8c4a-aaceb0616d82",
+      "name": "Mulenga Aaron",
+      "email": "mulengaaaron100@gmail.com",
+      "passwordHash": "$2a$10$gEn.UOdlnyXY.QSFNI/6tuGgGPxEqm24rvMiWS2Wp/jKAGE/wKH5O",
+      "role": "manager",
+      "status": "active",
+      "interests": [],
+      "attendedEvents": [],
+      "subscriptionTier": "Regular",
+      "authProviders": [
+        "local"
+      ]
     }
   ]
 }
