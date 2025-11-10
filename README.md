@@ -62,7 +62,7 @@ The frontend proxies API calls to VITE_API_BASE_URL (default http://localhost:40
 
 ## Production Deployment
 
-To deploy Vibely to a production server (e.g., your henzter server at 46.62.231.109):
+To deploy Vibely to a production server with the domain vibelyapp.live:
 
 1. Set up your production environment variables in `.env.production`
 2. Build the application: `npm run build`
@@ -71,5 +71,38 @@ To deploy Vibely to a production server (e.g., your henzter server at 46.62.231.
 
 The application will serve the built frontend files and API endpoints from the same server. Make sure to update the following environment variables for production:
 
-- CLIENT_ORIGIN - should include your production server address (e.g., http://46.62.231.109,https://46.62.231.109)
-- VITE_API_BASE_URL - should point to your production server's API (e.g., http://46.62.231.109:4000)
+- CLIENT_ORIGIN - should include your production server address (e.g., http://vibelyapp.live,https://vibelyapp.live)
+- VITE_API_BASE_URL - should point to your production server's API (e.g., https://vibelyapp.live:4000 or https://api.vibelyapp.live if using subdomain)
+
+## HTTPS Setup with Let's Encrypt
+
+To enable HTTPS on your domain vibelyapp.live, follow these steps:
+
+1. **Install Certbot** (on Ubuntu/Debian):
+   ```bash
+   sudo apt update
+   sudo apt install certbot python3-certbot-nginx
+   ```
+
+2. **Obtain SSL certificate**:
+   ```bash
+   sudo certbot --nginx -d vibelyapp.live -d www.vibelyapp.live
+   ```
+
+3. **Configure Nginx** (if not automatically configured by Certbot):
+   - Use the Nginx configuration provided in the `nginx.conf` file in this repository
+   - Make sure to update paths and server details for your specific setup
+   - Test the configuration: `sudo nginx -t`
+   - Reload Nginx: `sudo systemctl reload nginx`
+
+4. **Automatic renewal**: Certbot sets up a cron job or systemd timer to automatically renew certificates before they expire.
+
+For detailed instructions, see the `CERTBOT_SETUP.md` file in this repository.
+
+## Domain Configuration
+
+1. Point your domain `vibelyapp.live` and `www.vibelyapp.live` to your server's IP address via DNS records
+2. Update your environment variables in `.env.production`:
+   - CLIENT_ORIGIN=https://vibelyapp.live,https://www.vibelyapp.live
+   - VITE_API_BASE_URL=https://vibelyapp.live (or https://api.vibelyapp.live if using subdomain for API)
+3. Make sure all required ports (80, 443, and your app port) are open in your firewall
