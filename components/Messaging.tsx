@@ -12,6 +12,7 @@ import {
   requestUserStatus,
   onUserStatusResponse
 } from '../services/messagingService';
+import { playMessageFeedback } from '../utils/feedback';
 
 interface MessagingProps {
   currentUser: User;
@@ -51,10 +52,16 @@ const Messaging: React.FC<MessagingProps> = ({ currentUser, recipient, onClose }
     const handleReceiveMessage = (message: Message) => {
       setMessages(prev => [...prev, message]);
       markMessageAsRead(message.id);
+      if (message.senderId !== currentUser.id) {
+        playMessageFeedback('incoming');
+      }
     };
 
     const handleMessageSent = (message: Message) => {
       setMessages(prev => [...prev, message]);
+      if (message.senderId === currentUser.id) {
+        playMessageFeedback('outgoing');
+      }
     };
 
     const handleUserOnline = (userId: string) => {
@@ -102,7 +109,6 @@ const Messaging: React.FC<MessagingProps> = ({ currentUser, recipient, onClose }
       senderId: currentUser.id,
       senderName: currentUser.name
     });
-
     setNewMessage('');
   };
 

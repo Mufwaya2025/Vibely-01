@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { registerMessagingHandlers } from './messaging/socketManager';
 
 // For serving static files
 const __filename = fileURLToPath(import.meta.url);
@@ -22,10 +23,31 @@ const allowedOrigins = clientOrigin
   .map((origin) => origin.trim())
   .filter(Boolean);
 const allowAnyOrigin = allowedOrigins.length === 0 || allowedOrigins.includes('*');
+const allowedOriginsSet = new Set(allowedOrigins);
+
+const isLocalhostOrigin = (origin: string | undefined): origin is string => {
+  if (!origin) return false;
+  try {
+    const { hostname } = new URL(origin);
+    return hostname === 'localhost' || hostname === '127.0.0.1';
+  } catch {
+    return false;
+  }
+};
 
 app.use(
   cors({
-    origin: allowAnyOrigin ? true : allowedOrigins,
+    origin: (origin, callback) => {
+      if (allowAnyOrigin || !origin) {
+        callback(null, true);
+        return;
+      }
+      if (allowedOriginsSet.has(origin) || isLocalhostOrigin(origin)) {
+        callback(null, origin);
+        return;
+      }
+      callback(null, false);
+    },
     credentials: !allowAnyOrigin,
   })
 );
@@ -35,15 +57,18 @@ app.use(express.urlencoded({ extended: true }));
 // Set Content Security Policy header for security
 app.use((req, res, next) => {
   // Define the Content Security Policy
-  const connectSources = [
+const connectSources = [
     "'self'",
     'https://vibelyapp.live:4000',
     'http://localhost:4000',
+    'http://localhost:3000',
+    'http://localhost:3001',
     'https://fonts.googleapis.com',
     'https://fonts.gstatic.com',
     'https://accounts.google.com',
     'https://www.gstatic.com',
     'https://pay.lenco.co',
+    'wss://vibelyapp.live',
     'wss:',
     'ws:',
   ].join(' ');
@@ -78,108 +103,7 @@ const io = new Server(httpServer, {
   },
 });
 
-// In-memory storage for demo purposes
-// In production, this should be replaced with a database
-interface Message {
-  id: string;
-  senderId: string;
-  senderName: string;
-  receiverId: string;
-  content: string;
-  timestamp: string; // ISO date string
-  read: boolean;
-}
-
-interface UserSession {
-  userId: string;
-  socketId: string;
-}
-
-// In-memory stores for demo purposes
-const messages: Message[] = [];
-const userSessions: UserSession[] = [];
-
-io.use((socket, next) => {
-  const userId = socket.handshake.auth.userId;
-  if (userId) {
-    // Add user session
-    userSessions.push({ userId, socketId: socket.id });
-    next();
-  } else {
-    next(new Error("Authentication error"));
-  }
-});
-
-io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
-  
-  socket.on('join-room', (userId) => {
-    socket.join(userId);
-    console.log(`User ${userId} joined room: ${userId}`);
-    
-    // Notify other clients that user is online
-    socket.broadcast.emit('user-online', userId);
-  });
-
-  socket.on('send-message', (messageData) => {
-    const { receiverId, content, senderId, senderName } = messageData;
-    
-    // Create new message
-    const newMessage: Message = {
-      id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-      senderId,
-      senderName,
-      receiverId,
-      content,
-      timestamp: new Date().toISOString(),
-      read: false
-    };
-    
-    messages.push(newMessage);
-    
-    // Send message to receiver
-    const receiverSession = userSessions.find(session => session.userId === receiverId);
-    if (receiverSession) {
-      io.to(receiverSession.socketId).emit('receive-message', newMessage);
-    }
-    
-    // Also send to sender to confirm
-    socket.emit('message-sent', newMessage);
-  });
-
-  // Handle request for user status
-  socket.on('request-user-status', (userId) => {
-    const isOnline = userSessions.some(session => session.userId === userId);
-    // Send the status response back to the requesting socket
-    socket.emit('user-status-response', { userId, isOnline });
-  });
-
-  socket.on('mark-as-read', (messageId) => {
-    const message = messages.find(m => m.id === messageId);
-    if (message) {
-      message.read = true;
-      // Notify sender that message was read
-      const senderSession = userSessions.find(session => session.userId === message.senderId);
-      if (senderSession) {
-        io.to(senderSession.socketId).emit('message-read', messageId);
-      }
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.id}`);
-    
-    // Remove user session
-    const sessionIndex = userSessions.findIndex(session => session.socketId === socket.id);
-    if (sessionIndex !== -1) {
-      const userId = userSessions[sessionIndex].userId;
-      userSessions.splice(sessionIndex, 1);
-      
-      // Notify other clients that user is offline
-      socket.broadcast.emit('user-offline', userId);
-    }
-  });
-});
+registerMessagingHandlers(io);
 
 import { attachUser } from './middleware/attachUser';
 import { registerRoutes } from './routes';
