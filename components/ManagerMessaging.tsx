@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Message } from '../types';
-import { 
-  connectToMessaging, 
-  sendMessage, 
-  onMessageReceived, 
-  onMessageSent, 
-  onUserOnline, 
-  onUserOffline, 
+import {
+  connectToMessaging,
+  sendMessage,
+  onMessageReceived,
+  onMessageSent,
+  onUserOnline,
+  onUserOffline,
   markMessageAsRead,
   disconnectFromMessaging,
+  fetchConversation,
+  onConversationHistory,
 } from '../services/messagingService';
 import { playMessageFeedback } from '../utils/feedback';
 
@@ -85,7 +87,12 @@ const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose }) =>
       });
 
       if (message.senderId === activeId) {
-        setMessages(prev => [...prev, message]);
+        setMessages(prev => {
+          if (prev.some(m => m.id === message.id)) {
+            return prev;
+          }
+          return [...prev, message];
+        });
         markMessageAsRead(message.id);
       }
     };
@@ -93,7 +100,12 @@ const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose }) =>
     const handleMessageSent = (message: Message) => {
       const activeId = activeConversationRef.current;
       if (message.receiverId === activeId) {
-        setMessages(prev => [...prev, message]);
+        setMessages(prev => {
+          if (prev.some(m => m.id === message.id)) {
+            return prev;
+          }
+          return [...prev, message];
+        });
       }
 
       setConversations(prev => {
@@ -139,10 +151,37 @@ const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose }) =>
       );
     };
 
+    const handleConversationHistory = (data: { userId: string; messages: Message[] }) => {
+      const activeId = activeConversationRef.current;
+      if (data.userId !== activeId) return;
+      const sorted = [...data.messages].sort(
+        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+      setMessages(sorted);
+      setConversations(prev =>
+        prev.map(conv =>
+          conv.userId === data.userId
+            ? {
+                ...conv,
+                lastMessage: sorted[sorted.length - 1]?.content ?? conv.lastMessage,
+                lastMessageTime: sorted[sorted.length - 1]?.timestamp ?? conv.lastMessageTime,
+                unread: 0,
+              }
+            : conv
+        )
+      );
+      sorted.forEach(msg => {
+        if (!msg.read && msg.receiverId === user.id) {
+          markMessageAsRead(msg.id);
+        }
+      });
+    };
+
     cleanupFns.push(onMessageReceived(handleReceiveMessage));
     cleanupFns.push(onMessageSent(handleMessageSent));
     cleanupFns.push(onUserOnline(handleUserOnline));
     cleanupFns.push(onUserOffline(handleUserOffline));
+    cleanupFns.push(onConversationHistory(handleConversationHistory));
 
     return () => {
       cleanupFns.forEach(fn => fn && fn());
@@ -171,9 +210,8 @@ const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose }) =>
         conv.userId === userId ? { ...conv, unread: 0 } : conv
       )
     );
-    // In a real app, fetch messages for this conversation from the API
-    // For now, we'll just clear existing messages and start fresh
     setMessages([]);
+    fetchConversation(userId);
   };
 
   const handleSendMessage = () => {

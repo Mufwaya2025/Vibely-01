@@ -85,6 +85,16 @@ export const registerMessagingHandlers = (io: Server): void => {
       });
     });
 
+    socket.on('fetch-conversation', (targetUserId: string) => {
+      if (typeof targetUserId !== 'string' || !targetUserId.trim()) return;
+      const sanitizedTarget = targetUserId.trim();
+      const history = messageStore.getConversation(userId, sanitizedTarget);
+      socket.emit('conversation-history', {
+        userId: sanitizedTarget,
+        messages: history,
+      });
+    });
+
     socket.on('mark-as-read', (messageId: string) => {
       if (typeof messageId !== 'string' || !messageId.trim()) return;
       const updated = messageStore.markAsRead(messageId, userId);
