@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Message } from '../types';
-import { 
-  connectToMessaging, 
-  sendMessage, 
-  onMessageReceived, 
-  onMessageSent, 
-  onUserOnline, 
-  onUserOffline, 
+import {
+  connectToMessaging,
+  sendMessage,
+  onMessageReceived,
+  onMessageSent,
+  onUserOnline,
+  onUserOffline,
   markMessageAsRead,
   disconnectFromMessaging,
   requestUserStatus,
-  onUserStatusResponse
+  onUserStatusResponse,
+  fetchConversation,
+  onConversationHistory,
 } from '../services/messagingService';
 import { playMessageFeedback } from '../utils/feedback';
 
@@ -39,6 +41,7 @@ const Messaging: React.FC<MessagingProps> = ({ currentUser, recipient, onClose }
         // Request the current status of the recipient after connecting
         setTimeout(() => {
           requestUserStatus(recipient.id);
+          fetchConversation(recipient.id);
         }, 500); // Small delay to ensure connection is established
       } catch (error) {
         console.error('Failed to connect to messaging:', error);
@@ -50,7 +53,12 @@ const Messaging: React.FC<MessagingProps> = ({ currentUser, recipient, onClose }
 
     // Set up event listeners
     const handleReceiveMessage = (message: Message) => {
-      setMessages(prev => [...prev, message]);
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === message.id)) {
+          return prev;
+        }
+        return [...prev, message];
+      });
       markMessageAsRead(message.id);
       if (message.senderId !== currentUser.id) {
         playMessageFeedback('incoming');
@@ -58,7 +66,12 @@ const Messaging: React.FC<MessagingProps> = ({ currentUser, recipient, onClose }
     };
 
     const handleMessageSent = (message: Message) => {
-      setMessages(prev => [...prev, message]);
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === message.id)) {
+          return prev;
+        }
+        return [...prev, message];
+      });
       if (message.senderId === currentUser.id) {
         playMessageFeedback('outgoing');
       }
@@ -82,11 +95,25 @@ const Messaging: React.FC<MessagingProps> = ({ currentUser, recipient, onClose }
       }
     };
 
+    const handleConversationHistory = (data: { userId: string; messages: Message[] }) => {
+      if (data.userId !== recipient.id) return;
+      const sorted = [...data.messages].sort(
+        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+      setMessages(sorted);
+      sorted.forEach((msg) => {
+        if (!msg.read && msg.receiverId === currentUser.id) {
+          markMessageAsRead(msg.id);
+        }
+      });
+    };
+
     cleanupFns.push(onMessageReceived(handleReceiveMessage));
     cleanupFns.push(onMessageSent(handleMessageSent));
     cleanupFns.push(onUserOnline(handleUserOnline));
     cleanupFns.push(onUserOffline(handleUserOffline));
     cleanupFns.push(onUserStatusResponse(handleUserStatusResponse));
+    cleanupFns.push(onConversationHistory(handleConversationHistory));
 
     // Clean up on unmount
     return () => {
