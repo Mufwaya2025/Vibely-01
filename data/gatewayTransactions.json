@@ -463,6 +463,318 @@
         "cardDetails": null
       },
       "ticketId": "tkt-1762503880235-i5u1o"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1762856390395-h23nki",
+      "purpose": "ticket",
+      "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1762793630472-xaigp",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Test Event (General Admission)"
+      },
+      "id": "txn_c891d6c6-0b5b-488b-8370-82cc19d18990",
+      "createdAt": "2025-11-11T10:19:50.403Z",
+      "updatedAt": "2025-11-11T10:19:50.403Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1762856565516-399ymd",
+      "purpose": "ticket",
+      "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1762793630472-xaigp",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Test Event (General Admission)"
+      },
+      "id": "txn_582aac6f-cfa8-47c1-b924-eb0da34dcd30",
+      "createdAt": "2025-11-11T10:22:45.516Z",
+      "updatedAt": "2025-11-11T10:22:45.516Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1762858013672-a0xywt",
+      "purpose": "ticket",
+      "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1762793630472-xaigp",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Test Event (General Admission)"
+      },
+      "id": "txn_3695a094-9ad9-424d-bfaa-59c6de9900cb",
+      "createdAt": "2025-11-11T10:46:53.675Z",
+      "updatedAt": "2025-11-11T10:46:53.675Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1762858121080-juir8a",
+      "purpose": "ticket",
+      "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1762793630472-xaigp",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "card",
+          "mobile-money"
+        ],
+        "label": "Ticket for Test Event (General Admission)"
+      },
+      "id": "txn_63a364ff-970b-4d16-8d27-92b90a0cea8a",
+      "createdAt": "2025-11-11T10:48:41.081Z",
+      "updatedAt": "2025-11-11T10:48:41.081Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1762858775031-co8870",
+      "purpose": "ticket",
+      "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1762793630472-xaigp",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Test Event (General Admission)"
+      },
+      "id": "txn_ca4196bd-f608-45fc-bb31-0babd2b2dce0",
+      "createdAt": "2025-11-11T10:59:35.031Z",
+      "updatedAt": "2025-11-11T10:59:35.031Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1762859328319-4aakw5",
+      "purpose": "ticket",
+      "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1762793630472-xaigp",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Test Event (General Admission)"
+      },
+      "id": "txn_2b086d75-933e-413d-bfd6-e5d010797ec8",
+      "createdAt": "2025-11-11T11:08:48.319Z",
+      "updatedAt": "2025-11-11T11:08:48.319Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1762859395229-wbsma0",
+      "purpose": "ticket",
+      "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1762793630472-xaigp",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Test Event (General Admission)"
+      },
+      "id": "txn_3e57a4a9-eff0-440e-ab4b-428f75423a92",
+      "createdAt": "2025-11-11T11:09:55.229Z",
+      "updatedAt": "2025-11-11T11:09:55.229Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1762859479787-ssxby3",
+      "purpose": "ticket",
+      "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1762793630472-xaigp",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Test Event (General Admission)"
+      },
+      "id": "txn_f5a6ba31-0d83-4aa8-b20c-65c577fddeff",
+      "createdAt": "2025-11-11T11:11:19.787Z",
+      "updatedAt": "2025-11-11T11:11:19.787Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1762862321227-65dyfa",
+      "purpose": "ticket",
+      "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "userId": "7fd0ec94-d52c-4e3d-b062-3d5386eb5371",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1762793630472-xaigp",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "card",
+          "mobile-money"
+        ],
+        "label": "Ticket for Test Event (General Admission)"
+      },
+      "id": "txn_d6c56966-43ea-46b6-983d-59a1fb6599da",
+      "createdAt": "2025-11-11T11:58:41.232Z",
+      "updatedAt": "2025-11-11T11:58:41.232Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1762862451418-dpb009",
+      "purpose": "ticket",
+      "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "userId": "7fd0ec94-d52c-4e3d-b062-3d5386eb5371",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1762793630472-xaigp",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Test Event (General Admission)"
+      },
+      "id": "txn_69b1ef1f-b7c8-4943-a6b2-4241f562eaf2",
+      "createdAt": "2025-11-11T12:00:51.418Z",
+      "updatedAt": "2025-11-11T12:00:51.418Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1762862539353-mhybp5",
+      "purpose": "ticket",
+      "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1762793630472-xaigp",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Test Event (General Admission)"
+      },
+      "id": "txn_1e0bc2b0-89d8-4c20-a4a6-bed5af7236a5",
+      "createdAt": "2025-11-11T12:02:19.354Z",
+      "updatedAt": "2025-11-11T12:02:19.354Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1762862684231-2z7kan",
+      "purpose": "ticket",
+      "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1762793630472-xaigp",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Test Event (General Admission)"
+      },
+      "id": "txn_f9e47e21-da23-438d-98ed-c8f12f826ca6",
+      "createdAt": "2025-11-11T12:04:44.231Z",
+      "updatedAt": "2025-11-11T12:04:44.231Z"
     }
   ]
 }
