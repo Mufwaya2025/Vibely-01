@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tailwind Classes</title>
+    <script>
+        // Add styles dynamically to check if Tailwind classes work
+        window.addEventListener('DOMContentLoaded', (event) => {
+            console.log('DOM fully loaded and parsed');
+            
+            // Check if Tailwind CSS classes are working by testing computed styles
+            const testDiv = document.getElementById('test');
+            if (testDiv) {
+                const computedStyle = window.getComputedStyle(testDiv);
+                console.log('Background color: ', computedStyle.backgroundColor);
+                console.log('Computed styles: ', computedStyle);
+            }
+        });
+    </script>
+</head>
+<body class="min-h-screen bg-slate-100 flex flex-col items-center justify-center p-4">
+    <div id="test" class="bg-white p-6 rounded-lg shadow-lg text-center max-w-md">
+        <h1 class="text-2xl font-bold text-slate-900 mb-4">Tailwind CSS Test</h1>
+        <p class="text-slate-700 mb-4">This page tests if Tailwind CSS is working properly.</p>
+        <div class="mb-4">
+            <div class="bg-slate-100 p-3 rounded mb-2">Background: slate-100</div>
+            <div class="bg-purple-600 p-3 rounded text-white mb-2">Background: purple-600, Text: white</div>
+            <div class="bg-blue-500 p-3 rounded text-white">Background: blue-500, Text: white</div>
+        </div>
+        <button class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition">
+            Purple Button
+        </button>
+    </div>
+</body>
+</html>

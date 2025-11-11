@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './src/css/tailwind.css'; // Import Tailwind CSS
+import './src/index.css'; // Import Tailwind CSS
 import App from './App';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
@@ -29,7 +29,7 @@ root.render(
     {AppTree}
   </React.StrictMode>
 );
-if ("serviceWorker" in navigator) {
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/service-worker.js")
