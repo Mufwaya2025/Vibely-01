@@ -32,7 +32,6 @@
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.16",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
@@ -43,7 +42,7 @@
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
     "prisma": "^6.18.0",
-    "tailwindcss": "^4.1.16",
+    "tailwindcss": "^3.4.14",
     "tsx": "^4.20.6",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
