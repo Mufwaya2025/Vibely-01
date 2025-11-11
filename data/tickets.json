@@ -20,12 +20,13 @@
       "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
       "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
       "purchaseDate": "2025-11-11T12:35:40.036Z",
-      "status": "valid",
+      "status": "scanned",
       "code": "tkt-1762864540035-gakuc",
       "holderName": "Mufwaya Kaungu",
       "holderEmail": "mufwaya@yahoo.com",
       "tierId": "tier-1762793630472-xaigp",
-      "tierName": "General Admission"
+      "tierName": "General Admission",
+      "scanTimestamp": "2025-11-11T14:06:07.907Z"
     }
   ]
 }

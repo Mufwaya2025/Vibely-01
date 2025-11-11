@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Event, Ticket } from '../types';
-import { getTicketsForEvent, scanTicket } from '../services/ticketService';
+import { getTicketsForEvent, scanTicket, TicketScanError } from '../services/ticketService';
 import { formatPrice } from '../utils/tickets';
 import TicketScanHistoryModal from './TicketScanHistoryModal';
 
@@ -64,12 +64,14 @@ const ManageEventView: React.FC<ManageEventViewProps> = ({ event, onBack, onEdit
 
         try {
             const updatedTicket = await scanTicket(scanInput.trim());
-            if (updatedTicket) {
-                setTickets(prevTickets => prevTickets.map(t => t.ticketId === updatedTicket.ticketId ? updatedTicket : t));
-                setScanResult({ message: `Ticket ID "${scanInput}" successfully scanned!`, type: 'success' });
-            }
+            setTickets(prevTickets => prevTickets.map(t => t.ticketId === updatedTicket.ticketId ? updatedTicket : t));
+            setScanResult({ message: `Ticket ID "${scanInput}" successfully scanned!`, type: 'success' });
         } catch (error) {
-             setScanResult({ message: `An error occurred while scanning.`, type: 'error' });
+            if (error instanceof TicketScanError && error.status === 409) {
+                setScanResult({ message: error.message, type: 'warning' });
+            } else {
+                setScanResult({ message: error instanceof Error ? error.message : 'An error occurred while scanning.', type: 'error' });
+            }
         } finally {
             setIsScanning(false);
             setScanInput('');

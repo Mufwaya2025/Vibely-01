@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Event, User, Ticket, PaymentDetails, AdminStats } from './types';
 import { getAllEvents, createEvent } from './services/eventService';
 import { getTicketsForUser, createTicket, submitReview } from './services/ticketService';
@@ -96,23 +96,42 @@ const App: React.FC = () => {
     fetchLocation();
   }, []);
 
+  const refreshUserTickets = useCallback(
+    async (options: { includeRecommendations?: boolean } = {}) => {
+      if (!user) return;
+      try {
+        const userTickets = await getTicketsForUser(user.id);
+        setTickets(userTickets);
+        if (options.includeRecommendations && user.role === 'attendee') {
+          const recommendations = await getAIRecommendations(
+            user.interests,
+            userTickets.map((t) => t.eventId)
+          );
+          setRecommendedEventIds(recommendations);
+        }
+      } catch (err) {
+        console.error('Failed to refresh user tickets', err);
+      }
+    },
+    [user]
+  );
+
   // Fetch user-specific data after login
   useEffect(() => {
     if (user) {
-      const fetchUserData = async () => {
-        const userTickets = await getTicketsForUser(user.id);
-        setTickets(userTickets);
-        if (user.role === 'attendee') {
-            const recommendations = await getAIRecommendations(user.interests, userTickets.map(t => t.eventId));
-            setRecommendedEventIds(recommendations);
-        }
-      };
-      fetchUserData();
+      void refreshUserTickets({ includeRecommendations: true });
     } else {
       setTickets([]);
       setRecommendedEventIds([]);
     }
-  }, [user]);
+  }, [user, refreshUserTickets]);
+
+  // Silent refresh whenever the tickets modal opens
+  useEffect(() => {
+    if (activeModal === 'myTickets' && user) {
+      void refreshUserTickets();
+    }
+  }, [activeModal, user, refreshUserTickets]);
 
   useEffect(() => {
     if (user?.role === 'admin') {

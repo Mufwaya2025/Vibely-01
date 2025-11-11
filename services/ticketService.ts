@@ -56,14 +56,43 @@ export const getReviewsForEvent = async (eventId: string): Promise<Ticket[]> => 
 /**
  * Scans/redeems a ticket via the API (for organizer/manager interface).
  */
-export const scanTicket = async (ticketId: string): Promise<Ticket | null> => {
-    const response = await apiFetch('/api/tickets/scan', {
-      method: 'POST',
-      body: { ticketId },
-    });
-    if (!response.ok) return null;
-    return response.json();
+export class TicketScanError extends Error {
+  status?: number;
+
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = 'TicketScanError';
+    this.status = status;
+  }
 }
+
+const parseJsonSafe = (text: string) => {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+};
+
+export const scanTicket = async (ticketId: string): Promise<Ticket> => {
+  const response = await apiFetch('/api/tickets/scan', {
+    method: 'POST',
+    body: { ticketId },
+  });
+
+  const text = await response.text();
+  const payload = parseJsonSafe(text);
+
+  if (!response.ok) {
+    throw new TicketScanError(
+      (payload as { message?: string } | null)?.message ?? 'Failed to scan ticket.',
+      response.status
+    );
+  }
+
+  return payload as Ticket;
+};
 
 /**
  * Scans a ticket via the secure device-based API (for dedicated scanning devices).
