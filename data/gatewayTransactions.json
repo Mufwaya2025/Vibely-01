@@ -775,6 +775,98 @@
       "id": "txn_f9e47e21-da23-438d-98ed-c8f12f826ca6",
       "createdAt": "2025-11-11T12:04:44.231Z",
       "updatedAt": "2025-11-11T12:04:44.231Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1762864250911-26neo1",
+      "purpose": "ticket",
+      "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1762793630472-xaigp",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Test Event (General Admission)"
+      },
+      "id": "txn_a8b786f4-9ce7-46ac-957e-0cd7b787f964",
+      "createdAt": "2025-11-11T12:30:50.912Z",
+      "updatedAt": "2025-11-11T12:30:50.912Z"
+    },
+    {
+      "externalId": "a07ce88a-a32a-46f7-9f4d-f016df9078f7",
+      "reference": "ticket-1762864493633-ukpake",
+      "purpose": "ticket",
+      "eventId": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "succeeded",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1762793630472-xaigp",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Test Event (General Admission)"
+      },
+      "id": "txn_4858aa33-c643-4e9d-ab43-7270d47724dd",
+      "createdAt": "2025-11-11T12:34:53.633Z",
+      "updatedAt": "2025-11-11T12:35:40.044Z",
+      "lencoReference": "2531504338",
+      "fee": 0.01,
+      "bearer": "merchant",
+      "channel": "mobile-money",
+      "rawResponse": {
+        "id": "a07ce88a-a32a-46f7-9f4d-f016df9078f7",
+        "initiatedAt": "2025-11-11T12:34:54.502Z",
+        "completedAt": "2025-11-11T12:35:33.772Z",
+        "amount": "1.00",
+        "fee": "0.01",
+        "bearer": "merchant",
+        "currency": "ZMW",
+        "reference": "ticket-1762864493633-ukpake",
+        "lencoReference": "2531504338",
+        "type": "mobile-money",
+        "status": "successful",
+        "source": "api",
+        "reasonForFailure": null,
+        "settlementStatus": "settled",
+        "settlement": {
+          "id": "4a6f1afa-721b-4c3e-8eb0-21275c35c665",
+          "amountSettled": "0.99",
+          "currency": "ZMW",
+          "createdAt": "2025-11-11T12:35:33.854Z",
+          "settledAt": "2025-11-11T12:35:33.990Z",
+          "status": "settled",
+          "type": "instant",
+          "accountId": "d901de95-1bd3-410c-a0ac-897e4636adb2"
+        },
+        "mobileMoneyDetails": {
+          "country": "zm",
+          "phone": "0777098622",
+          "operator": "airtel",
+          "accountName": "Kaungu Mufwaya",
+          "operatorTransactionId": "MP251111.1435.D58229"
+        },
+        "bankAccountDetails": null,
+        "cardDetails": null
+      },
+      "ticketId": "tkt-1762864540035-gakuc"
     }
   ]
 }

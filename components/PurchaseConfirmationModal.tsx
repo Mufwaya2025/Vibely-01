@@ -293,22 +293,24 @@ const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ e
                     onClick={async () => {
                       if (!lastReference) return;
                       setIsVerifying(true);
+                      setError('');
                       try {
                         const result = await verifyPaymentReference(lastReference);
-                        if (result.status === 'completed') {
+                        if (result.success) {
                           setPendingMessage(null);
                           setLastReference(null);
-                          setError('');
                           const details: PaymentDetails = mobileMoneyPhone
                             ? { mobileMoney: { phone: mobileMoneyPhone } }
                             : {};
-                          onPurchaseSuccess(event, details, saveDetails, result.transactionId);
-                        } else if (result.status === 'failed') {
+                          onPurchaseSuccess(event, details, saveDetails, result.transactionId, selectedTicketTier);
+                        } else if (result.status === 'pending') {
+                          setPendingMessage(`Payment is still pending confirmation. Reference: ${lastReference}`);
+                        } else {
                           setPendingMessage(null);
                           setLastReference(null);
-                          setError('Payment verification failed. Please try again.');
-                        } else {
-                          setPendingMessage('Payment is still pending confirmation.');
+                          setError(
+                            `Payment status: ${result.status}. Please try again or contact support with reference ${lastReference}.`
+                          );
                         }
                       } catch (err) {
                         setError('Failed to verify payment status. Please try again.');
