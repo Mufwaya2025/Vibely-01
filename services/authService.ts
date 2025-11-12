@@ -9,7 +9,7 @@ type SignupRole = 'attendee' | 'manager';
  * @param password The user's password.
  * @returns A promise that resolves to the User object or null.
  */
-export const login = async (email: string, password: string): Promise<User | null> => {
+export const login = async (email: string, password: string): Promise<User> => {
   try {
     const response = await apiFetch('/api/auth/login', {
       method: 'POST',
@@ -17,13 +17,24 @@ export const login = async (email: string, password: string): Promise<User | nul
     });
 
     if (!response.ok) {
-      console.error('Login failed:', await response.text());
-      return null;
+      const rawMessage = await response.text().catch(() => '');
+      let message = rawMessage || 'Failed to sign in.';
+      try {
+        const parsed = JSON.parse(rawMessage);
+        if (parsed?.message) {
+          message = parsed.message;
+        }
+      } catch {
+        // ignore JSON parse errors
+      }
+      throw new Error(message || 'Failed to sign in.');
     }
     return await response.json();
   } catch (error) {
-    console.error('Error during login:', error);
-    return null;
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to sign in.');
   }
 };
 
@@ -70,6 +81,39 @@ export const loginWithGoogle = async (credential: string): Promise<User> => {
   if (!response.ok) {
     const message = await response.text().catch(() => 'Google login failed.');
     throw new Error(message || 'Google login failed.');
+  }
+
+  return response.json();
+};
+
+export const requestPasswordReset = async (
+  email: string
+): Promise<{ message: string; resetToken?: string; expiresAt?: string }> => {
+  const response = await apiFetch('/api/auth/password-reset/request', {
+    method: 'POST',
+    body: { email },
+  });
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => 'Unable to request password reset.');
+    throw new Error(message || 'Unable to request password reset.');
+  }
+
+  return response.json();
+};
+
+export const confirmPasswordReset = async (
+  token: string,
+  password: string
+): Promise<{ message: string }> => {
+  const response = await apiFetch('/api/auth/password-reset/confirm', {
+    method: 'POST',
+    body: { token, password },
+  });
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => 'Unable to reset password.');
+    throw new Error(message || 'Unable to reset password.');
   }
 
   return response.json();

@@ -27,11 +27,21 @@ const EXPORT_OPTIONS: { label: string; value: DataExportJob['type'] }[] = [
   { label: 'Users', value: 'users' },
 ];
 
+const DEFAULT_PAYOUT_FEES: PlatformSettings['payoutFees'] = {
+  mobileMoney: [
+    { minAmount: 5, maxAmount: 1000, fee: 11 },
+    { minAmount: 1001, maxAmount: 50000, fee: 15 },
+    { minAmount: 50001, maxAmount: 100000, fee: 20 },
+  ],
+  bankAccount: [{ minAmount: 0, maxAmount: null, fee: 15 }],
+};
+
 const AdminSettingsPanel: React.FC<AdminSettingsPanelProps> = ({ currentUser }) => {
   const [settings, setSettings] = useState<PlatformSettings | null>(null);
   const [feeDraft, setFeeDraft] = useState<number>(7.5);
   const [autoPayouts, setAutoPayouts] = useState<boolean>(false);
   const [payoutCurrency, setPayoutCurrency] = useState<string>('ZMW');
+  const [payoutFeeDraft, setPayoutFeeDraft] = useState<PlatformSettings['payoutFees']>(DEFAULT_PAYOUT_FEES);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
 
@@ -49,10 +59,122 @@ const AdminSettingsPanel: React.FC<AdminSettingsPanelProps> = ({ currentUser }) 
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [exportLoading, setExportLoading] = useState(false);
 
+  const cloneFees = (fees: PlatformSettings['payoutFees']) =>
+    JSON.parse(JSON.stringify(fees)) as PlatformSettings['payoutFees'];
+
   const resetMessages = () => {
     setSettingsMessage(null);
     setApiKeyMessage(null);
     setExportMessage(null);
+  };
+
+  type FeeChannel = keyof PlatformSettings['payoutFees'];
+
+  const handleFeeTierChange = (
+    channel: FeeChannel,
+    index: number,
+    field: 'minAmount' | 'maxAmount' | 'fee',
+    rawValue: string
+  ) => {
+    setPayoutFeeDraft((prev) => {
+      const tiers = prev[channel] ?? [];
+      const value = rawValue === '' ? (field === 'maxAmount' ? null : 0) : Number(rawValue);
+      const updated = tiers.map((tier, i) => {
+        if (i !== index) return tier;
+        if (field === 'maxAmount') {
+          return { ...tier, maxAmount: value === null ? null : Number(value) };
+        }
+        return { ...tier, [field]: typeof value === 'number' ? value : 0 };
+      });
+      return { ...prev, [channel]: updated };
+    });
+  };
+
+  const handleAddFeeTier = (channel: FeeChannel) => {
+    setPayoutFeeDraft((prev) => {
+      const tiers = prev[channel] ?? [];
+      const last = tiers[tiers.length - 1];
+      const nextTier: PayoutFeeTier = {
+        minAmount: last?.maxAmount ?? last?.minAmount ?? 0,
+        maxAmount: null,
+        fee: last?.fee ?? 0,
+      };
+      return { ...prev, [channel]: [...tiers, nextTier] };
+    });
+  };
+
+  const handleRemoveFeeTier = (channel: FeeChannel, index: number) => {
+    setPayoutFeeDraft((prev) => {
+      const tiers = prev[channel] ?? [];
+      if (tiers.length <= 1) {
+        return prev;
+      }
+      return { ...prev, [channel]: tiers.filter((_, i) => i !== index) };
+    });
+  };
+
+  const renderFeeChannel = (channel: FeeChannel, label: string) => {
+    const tiers = payoutFeeDraft[channel] ?? [];
+    return (
+      <div className="space-y-3 rounded-xl border border-slate-200 p-4">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-semibold text-slate-800">{label}</h4>
+          <button
+            type="button"
+            onClick={() => handleAddFeeTier(channel)}
+            className="text-xs font-semibold text-purple-600 hover:text-purple-800"
+          >
+            + Add tier
+          </button>
+        </div>
+        {tiers.length === 0 && <p className="text-xs text-slate-500">No fee tiers configured.</p>}
+        {tiers.map((tier, index) => (
+          <div key={`${channel}-${index}`} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-500">Min (K)</label>
+              <input
+                type="number"
+                min={0}
+                value={tier.minAmount}
+                onChange={(e) => handleFeeTierChange(channel, index, 'minAmount', e.target.value)}
+                className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-purple-500 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500">Max (K)</label>
+              <input
+                type="number"
+                min={0}
+                value={tier.maxAmount ?? ''}
+                placeholder="No max"
+                onChange={(e) => handleFeeTierChange(channel, index, 'maxAmount', e.target.value)}
+                className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-purple-500 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500">Fee (K)</label>
+              <div className="mt-1 flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  value={tier.fee}
+                  onChange={(e) => handleFeeTierChange(channel, index, 'fee', e.target.value)}
+                  className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-purple-500 focus:ring-purple-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveFeeTier(channel, index)}
+                  disabled={(payoutFeeDraft[channel] ?? []).length <= 1}
+                  className="text-xs font-semibold text-rose-600 disabled:opacity-40"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   const loadSettings = useCallback(async () => {
@@ -62,6 +184,7 @@ const AdminSettingsPanel: React.FC<AdminSettingsPanelProps> = ({ currentUser }) 
       setFeeDraft(result.platformFeePercent);
       setAutoPayouts(result.autoPayoutsEnabled);
       setPayoutCurrency(result.payoutCurrency);
+      setPayoutFeeDraft(cloneFees(result.payoutFees ?? DEFAULT_PAYOUT_FEES));
     } catch (err) {
       console.error('Failed to load platform settings', err);
     }
@@ -103,8 +226,10 @@ const AdminSettingsPanel: React.FC<AdminSettingsPanelProps> = ({ currentUser }) 
         platformFeePercent: feeDraft,
         payoutCurrency,
         autoPayoutsEnabled: autoPayouts,
+        payoutFees: payoutFeeDraft,
       });
       setSettings(updated);
+      setPayoutFeeDraft(cloneFees(updated.payoutFees));
       setSettingsMessage('Platform settings updated successfully.');
     } catch (err) {
       console.error('Failed to update platform settings', err);
@@ -263,6 +388,16 @@ const AdminSettingsPanel: React.FC<AdminSettingsPanelProps> = ({ currentUser }) 
             <label htmlFor="auto-payouts" className="text-sm text-gray-700">
               Enable automatic weekly payouts
             </label>
+          </div>
+        </div>
+        <div className="border-t border-dashed border-gray-200 pt-4">
+          <h4 className="text-sm font-semibold text-gray-900">Manual payout charges</h4>
+          <p className="text-xs text-gray-500 mb-4">
+            These fees are shown to managers inside the Revenue dashboard before they submit a payout request.
+          </p>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {renderFeeChannel('mobileMoney', 'Mobile money')}
+            {renderFeeChannel('bankAccount', 'Bank accounts')}
           </div>
         </div>
         {settingsMessage && (

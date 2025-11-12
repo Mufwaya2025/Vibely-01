@@ -1,13 +1,25 @@
 // Updated PurchaseConfirmationModal component integrating Lenco payments.
 import React, { useMemo, useState, useEffect } from "react";
-import { Event, PaymentDetails, PaymentMethod, User } from "../types";
+import { Event, PaymentDetails, PaymentMethod, Ticket, User } from "../types";
 import { formatPrice } from "../utils/tickets";
 import { processPayment, getPaymentDetails, savePaymentDetails, verifyPaymentReference } from "../services/paymentService";
+
+interface PurchaseFulfillmentPayload {
+  issuedTicket?: Ticket | null;
+  existingTicketId?: string | null;
+}
 
 interface PurchaseConfirmationModalProps {
   event: Event | null;
   onClose: () => void;
-  onPurchaseSuccess: (event: Event, details: PaymentDetails, save: boolean, transactionId: string, ticketTierId?: string) => void;
+  onPurchaseSuccess: (
+    event: Event,
+    details: PaymentDetails,
+    save: boolean,
+    transactionId: string,
+    ticketTierId?: string,
+    fulfillment?: PurchaseFulfillmentPayload
+  ) => void;
   user: User;
 }
 
@@ -109,7 +121,21 @@ const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ e
         if (saveDetails) {
           savePaymentDetails(details);
         }
-        onPurchaseSuccess(event, details, saveDetails, result.transactionId, selectedTicketTier);
+        const fulfillment = {
+          issuedTicket: result.issuedTicket ?? null,
+          existingTicketId: (result.transaction as Record<string, unknown> | undefined)?.ticketId as
+            | string
+            | null
+            | undefined,
+        };
+        onPurchaseSuccess(
+          event,
+          details,
+          saveDetails,
+          result.transactionId,
+          selectedTicketTier,
+          fulfillment
+        );
       } else if (result.status === 'pending') {
         setLastReference(reference);
         setError('');
@@ -302,7 +328,21 @@ const PurchaseConfirmationModal: React.FC<PurchaseConfirmationModalProps> = ({ e
                           const details: PaymentDetails = mobileMoneyPhone
                             ? { mobileMoney: { phone: mobileMoneyPhone } }
                             : {};
-                          onPurchaseSuccess(event, details, saveDetails, result.transactionId, selectedTicketTier);
+                          const fulfillment = {
+                            issuedTicket: result.issuedTicket ?? null,
+                            existingTicketId: (result.transaction as Record<string, unknown> | undefined)?.ticketId as
+                              | string
+                              | null
+                              | undefined,
+                          };
+                          onPurchaseSuccess(
+                            event,
+                            details,
+                            saveDetails,
+                            result.transactionId,
+                            selectedTicketTier,
+                            fulfillment
+                          );
                         } else if (result.status === 'pending') {
                           setPendingMessage(`Payment is still pending confirmation. Reference: ${lastReference}`);
                         } else {

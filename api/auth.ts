@@ -1,7 +1,8 @@
 import { randomUUID } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
-import { UserRole } from '../types';
+import { UserRole, UserStatus } from '../types';
 import { usersStore } from '../server/storage/usersStore';
+import { db } from './db';
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID ?? '';
 const googleClient = googleClientId ? new OAuth2Client(googleClientId) : null;
@@ -9,11 +10,21 @@ const googleClient = googleClientId ? new OAuth2Client(googleClientId) : null;
 // This file simulates API endpoints, e.g., /api/auth/login or /api/auth/signup.
 // In a real backend, these would be Express.js route handlers.
 
-/**
- * Handles a user login request.
- * @param {Request} req - The incoming request object, containing email in the body.
- * @returns {Response} A response object with the user data or an error.
- */
+const STATUS_MESSAGES: Record<Exclude<UserStatus, 'active'>, string> = {
+  suspended: 'Your account has been suspended. Please contact support for assistance.',
+  onboarding: 'Your account is still pending activation. Please check back later.',
+};
+
+const buildInactiveStatusResponse = (status: UserStatus): Response => {
+  const message =
+    status === 'active' ? 'Your account is active.' : STATUS_MESSAGES[status] ?? 'Account is not active.';
+  const statusCode = status === 'suspended' ? 423 : 403;
+  return new Response(JSON.stringify({ message, status }), {
+    status: statusCode,
+    headers: { 'Content-Type': 'application/json' },
+  });
+};
+
 export async function handleLogin(req: { body: { email?: string; password?: string } }) {
   const { email, password } = req.body ?? {};
 
@@ -48,6 +59,10 @@ export async function handleLogin(req: { body: { email?: string; password?: stri
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     });
+  }
+
+  if (storedUser.status !== 'active') {
+    return buildInactiveStatusResponse(storedUser.status);
   }
 
   const user = usersStore.toPublicUser(storedUser);
@@ -174,6 +189,10 @@ export async function handleGoogleLogin(req: { body: { credential?: string } }) 
       });
     }
 
+    if (storedUser.status !== 'active') {
+      return buildInactiveStatusResponse(storedUser.status);
+    }
+
     const user = usersStore.toPublicUser(storedUser);
     return new Response(JSON.stringify(user), {
       status: 200,
@@ -186,4 +205,88 @@ export async function handleGoogleLogin(req: { body: { credential?: string } }) 
       headers: { 'Content-Type': 'application/json' },
     });
   }
+}
+
+export async function handleRequestPasswordReset(req: { body: { email?: string } }) {
+  const email = req.body?.email?.trim().toLowerCase();
+  if (!email) {
+    return new Response(JSON.stringify({ message: 'Email is required.' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const genericMessage =
+    'If an account exists for that email, we sent password reset instructions.';
+
+  const user = usersStore.findByEmail(email);
+  if (!user || !user.authProviders.includes('local')) {
+    return new Response(JSON.stringify({ message: genericMessage }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const { token, record } = db.passwordResets.create(user.id, 30);
+
+  return new Response(
+    JSON.stringify({
+      message: genericMessage,
+      resetToken: token,
+      expiresAt: record.expiresAt,
+    }),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+}
+
+export async function handleConfirmPasswordReset(req: {
+  body: { token?: string; password?: string };
+}) {
+  const { token, password } = req.body ?? {};
+  if (!token || !password) {
+    return new Response(JSON.stringify({ message: 'Token and new password are required.' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (password.length < 8) {
+    return new Response(JSON.stringify({ message: 'Password must be at least 8 characters.' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const resetRecord = db.passwordResets.findValidByToken(token);
+  if (!resetRecord) {
+    return new Response(JSON.stringify({ message: 'Invalid or expired reset token.' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const user = usersStore.findById(resetRecord.userId);
+  if (!user) {
+    return new Response(JSON.stringify({ message: 'User account not found.' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  usersStore.update(user.id, {
+    passwordHash: usersStore.hashPassword(password),
+    authProviders: user.authProviders.includes('local')
+      ? user.authProviders
+      : [...user.authProviders, 'local'],
+  });
+
+  db.passwordResets.markUsed(resetRecord.id);
+
+  return new Response(JSON.stringify({ message: 'Password updated successfully.' }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }

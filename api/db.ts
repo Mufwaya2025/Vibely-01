@@ -20,6 +20,8 @@ import { dataExportsStore } from '../server/storage/dataExportsStore';
 import { notificationTemplatesStore } from '../server/storage/notificationTemplatesStore';
 import { notificationQueueStore } from '../server/storage/notificationQueueStore';
 import { webhookLogsStore } from '../server/storage/webhookLogsStore';
+import { payoutMethodsStore } from '../server/storage/payoutMethodsStore';
+import { passwordResetStore } from '../server/storage/passwordResetStore';
 
 // Combine all storage modules into a single db object
 export const db = {
@@ -43,4 +45,6 @@ export const db = {
   notificationTemplates: notificationTemplatesStore,
   notificationQueue: notificationQueueStore,
   webhookLogs: webhookLogsStore,
+  payoutMethods: payoutMethodsStore,
+  passwordResets: passwordResetStore,
 };

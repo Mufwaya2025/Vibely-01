@@ -2,7 +2,13 @@ import type { Express } from 'express';
 import { Router } from 'express';
 import { createHandler, createTicketScanRateLimitedHandler, createDeviceAuthRateLimitedHandler } from '../utils/createHandler';
 
-import { handleLogin, handleSignup, handleGoogleLogin } from '../../api/auth';
+import {
+  handleLogin,
+  handleSignup,
+  handleGoogleLogin,
+  handleRequestPasswordReset,
+  handleConfirmPasswordReset,
+} from '../../api/auth';
 import { handleGetAllEvents, handleCreateEvent, handleUpdateEvent, handleDeleteEvent } from '../../api/events';
 import {
   handleGetTicketsForUser,
@@ -23,6 +29,7 @@ import {
   handleGetOrganizerBalance,
   handleGetOrganizerTransactions,
   handleGetSubscriptionTransactions,
+  handleGetUserTransactions,
 } from '../../api/payments';
 import {
   handleUpgradeSubscription,
@@ -46,6 +53,11 @@ import {
   handleAdminReplayWebhook,
   handleAdminGetPaymentSummary,
   handleAdminExportPayments,
+  handleAdminGetPayoutRequests,
+  handleAdminApprovePayoutRequest,
+  handleAdminRejectPayoutRequest,
+  handleAdminGetPlatformBalance,
+  handleAdminCreatePlatformPayout,
 } from '../../api/adminPayments';
 import {
   handleAdminGetUsers,
@@ -89,6 +101,12 @@ import {
   handleUpdateSubscriptionTier,
   handleDeleteSubscriptionTier,
 } from '../../api/adminSubscriptions';
+import {
+  handleGetPayoutMethods,
+  handleCreatePayoutMethod,
+  handleUpdatePayoutMethod,
+  handleDeletePayoutMethod,
+} from '../../api/payoutMethods';
 
 export const registerRoutes = (app: Express) => {
   const router = Router();
@@ -97,6 +115,8 @@ export const registerRoutes = (app: Express) => {
   router.post('/auth/signup', createHandler(handleSignup));
   router.post('/auth/login', createHandler(handleLogin));
   router.post('/auth/google', createHandler(handleGoogleLogin));
+  router.post('/auth/password-reset/request', createHandler(handleRequestPasswordReset));
+  router.post('/auth/password-reset/confirm', createHandler(handleConfirmPasswordReset));
 
   // Events
   router.get('/events', createHandler(handleGetAllEvents));
@@ -123,10 +143,17 @@ export const registerRoutes = (app: Express) => {
   router.post('/payments/session', createHandler(handleCreatePaymentSession));
   router.post('/payments/verify', createHandler(handleVerifyPayment));
   router.post('/payments/attach-ticket', createHandler(handleAttachTicketToTransaction));
-  router.post('/payments/payouts', createHandler(handleInitiatePayout));
+  router.get('/payments/user-transactions', createHandler(handleGetUserTransactions));
   router.get('/payments/organizers/:organizerId/balance', createHandler(handleGetOrganizerBalance));
   router.get('/payments/organizers/:organizerId/transactions', createHandler(handleGetOrganizerTransactions));
   router.get('/payments/subscriptions', createHandler(handleGetSubscriptionTransactions));
+  router.post('/payments/payouts', createHandler(handleInitiatePayout));
+
+  // Wallet / payouts
+  router.get('/wallet/payout-methods', createHandler(handleGetPayoutMethods));
+  router.post('/wallet/payout-methods', createHandler(handleCreatePayoutMethod));
+  router.patch('/wallet/payout-methods/:id', createHandler(handleUpdatePayoutMethod));
+  router.delete('/wallet/payout-methods/:id', createHandler(handleDeletePayoutMethod));
   router.post('/webhooks/:provider', createHandler(handlePublicWebhook));
 
   // Subscriptions
@@ -151,6 +178,11 @@ export const registerRoutes = (app: Express) => {
   router.post('/admin/payments/webhook-logs/:id/replay', createHandler(handleAdminReplayWebhook));
   router.get('/admin/payments/summary', createHandler(handleAdminGetPaymentSummary));
   router.get('/admin/payments/export', createHandler(handleAdminExportPayments));
+  router.get('/admin/payments/payouts', createHandler(handleAdminGetPayoutRequests));
+  router.post('/admin/payments/payouts/:id/approve', createHandler(handleAdminApprovePayoutRequest));
+  router.post('/admin/payments/payouts/:id/reject', createHandler(handleAdminRejectPayoutRequest));
+  router.get('/admin/payments/platform-balance', createHandler(handleAdminGetPlatformBalance));
+  router.post('/admin/payments/platform-payouts', createHandler(handleAdminCreatePlatformPayout));
 
   // Admin users
   router.get('/admin/users', createHandler(handleAdminGetUsers));

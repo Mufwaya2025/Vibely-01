@@ -17,6 +17,17 @@ export type RefundStatus = 'open' | 'in_review' | 'resolved' | 'escalated';
 export type ApiKeyStatus = 'active' | 'revoked';
 export type DataExportStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
+export interface PayoutFeeTier {
+  minAmount: number;
+  maxAmount: number | null;
+  fee: number;
+}
+
+export interface PayoutFeeSettings {
+  bankAccount: PayoutFeeTier[];
+  mobileMoney: PayoutFeeTier[];
+}
+
 export interface SubscriptionTier {
   id: string;
   name: string;
@@ -184,10 +195,18 @@ export interface NominatimResult {
 
 export interface PayoutMethod {
     id: string;
+    userId: string;
     type: PayoutAccountType;
-    details: string; // e.g., "ABSA Bank - **** 4321" or "MTN Mobile Money - 09...56"
+    details: string; // Masked label for UI display
     accountInfo: string; // Account holder name
+    bankName?: string;
+    bankCode?: string;
+    accountNumber?: string;
+    mobileMoneyProvider?: string;
+    phoneNumber?: string;
     isDefault: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface Transaction {
@@ -361,6 +380,7 @@ export interface PlatformSettings {
   platformFeePercent: number;
   payoutCurrency: string;
   autoPayoutsEnabled: boolean;
+  payoutFees: PayoutFeeSettings;
   updatedAt: string;
   updatedBy?: string;
 }

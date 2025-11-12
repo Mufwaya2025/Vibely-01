@@ -1,0 +1,16 @@
+{
+  "platformFeePercent": 3.5,
+  "payoutCurrency": "ZMW",
+  "autoPayoutsEnabled": false,
+  "payoutFees": {
+    "mobileMoney": [
+      { "minAmount": 5, "maxAmount": 1000, "fee": 11 },
+      { "minAmount": 1001, "maxAmount": 50000, "fee": 15 },
+      { "minAmount": 50001, "maxAmount": 100000, "fee": 20 }
+    ],
+    "bankAccount": [
+      { "minAmount": 0, "maxAmount": null, "fee": 15 }
+    ]
+  },
+  "updatedAt": "2025-01-01T00:00:00.000Z"
+}

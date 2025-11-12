@@ -1,11 +1,10 @@
 import { db } from "./db";
-import { GatewayTransactionStatus, PaymentMethod, User } from "../types";
+import { GatewayTransaction, GatewayTransactionStatus, PaymentMethod, Ticket, User } from "../types";
 import { isLencoConfigured, lencoConfig } from "../server/config/lencoConfig";
 import {
   createReference,
   verifyCollection,
   computeWebhookSignature,
-  createTransfer,
   LencoClientError,
 } from "../server/services/lencoClient";
 
@@ -52,6 +51,59 @@ const resolveUserNames = (user: User) => {
   const firstName = parts[0] ?? user.name;
   const lastName = parts.slice(1).join(" ");
   return { firstName, lastName };
+};
+
+const issueTicketForTransaction = (txn: GatewayTransaction): Ticket | null => {
+  if (txn.purpose !== "ticket") {
+    return null;
+  }
+  if (txn.ticketId) {
+    return null;
+  }
+  if (!txn.eventId) {
+    return null;
+  }
+
+  const event = db.events.findById(txn.eventId);
+  const user = db.users.findById(txn.userId);
+  if (!event || !user) {
+    return null;
+  }
+
+  const ticketId = `tkt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const now = new Date().toISOString();
+
+  const ticketRecord = db.tickets.create({
+    ticketId,
+    eventId: event.id,
+    userId: user.id,
+    purchaseDate: now,
+    status: "valid",
+    code: ticketId,
+    holderName: user.name,
+    holderEmail: user.email,
+    tierId: typeof txn.metadata?.ticketTierId === "string" ? (txn.metadata.ticketTierId as string) : undefined,
+    tierName: typeof txn.metadata?.ticketTierName === "string" ? (txn.metadata.ticketTierName as string) : undefined,
+  });
+
+  db.gatewayTransactions.attachTicket(txn.id, ticketId);
+  db.events.update(event.id, {
+    ticketsSold: (event.ticketsSold ?? 0) + 1,
+  });
+
+  const issuedTicket: Ticket = {
+    ticketId: ticketRecord.ticketId,
+    eventId: ticketRecord.eventId,
+    code: ticketRecord.code ?? ticketRecord.ticketId,
+    status: ticketRecord.status as Ticket["status"],
+    holderName: ticketRecord.holderName ?? user.name,
+    holderEmail: ticketRecord.holderEmail ?? user.email,
+    createdAt: ticketRecord.purchaseDate ?? now,
+    tierId: ticketRecord.tierId,
+    tierName: ticketRecord.tierName,
+  };
+
+  return issuedTicket;
 };
 
 export async function handleCreatePaymentSession(req: { body: PaymentSessionBody }) {
@@ -203,6 +255,17 @@ export async function handleVerifyPayment(req: { body: VerifyPaymentBody }) {
         rawResponse: data ? { ...data } : existing.rawResponse,
       }) ?? existing;
 
+    let issuedTicket: Ticket | null = null;
+    if (mappedStatus === "succeeded" && updated.purpose === "ticket" && !updated.ticketId) {
+      issuedTicket = issueTicketForTransaction(updated);
+      if (issuedTicket) {
+        const refreshed = db.gatewayTransactions.findByReference(reference);
+        if (refreshed) {
+          Object.assign(updated, refreshed);
+        }
+      }
+    }
+
     let updatedUser: User | null = null;
     if (mappedStatus === "succeeded" && updated.purpose === "subscription") {
       const expiresAt = new Date();
@@ -216,6 +279,7 @@ export async function handleVerifyPayment(req: { body: VerifyPaymentBody }) {
         status: mappedStatus,
         transaction: updated,
         updatedUser,
+        issuedTicket,
       }),
       {
         status: 200,
@@ -262,22 +326,44 @@ export async function handleAttachTicketToTransaction(req: {
   });
 }
 
-interface PayoutDestination {
-  type: 'bank_account';
-  accountNumber: string;
-  bankCode: string;
-  accountName: string;
-}
-
 interface PayoutRequestBody {
   organizerId: string;
   amount?: number;
-  destination: PayoutDestination;
+  payoutMethodId: string;
   narration?: string;
   currency?: string;
 }
 
 const getPlatformFeePercent = () => db.platformSettings.get().platformFeePercent ?? 0;
+const getPayoutFeeSettings = () => db.platformSettings.get().payoutFees;
+
+const resolvePayoutFee = (amount: number, methodType: 'Bank' | 'MobileMoney') => {
+  const settings = getPayoutFeeSettings();
+  const tiers =
+    methodType === 'Bank'
+      ? settings.bankAccount ?? []
+      : settings.mobileMoney ?? [];
+
+  if (!Array.isArray(tiers) || tiers.length === 0) {
+    return 0;
+  }
+
+  const sorted = [...tiers].sort((a, b) => a.minAmount - b.minAmount);
+  const firstTier = sorted[0];
+  if (amount < firstTier.minAmount) {
+    throw new Error(
+      `Minimum payout for ${methodType === 'Bank' ? 'bank accounts' : 'mobile money'} is ${firstTier.minAmount}.`
+    );
+  }
+
+  const matched =
+    sorted.find((tier) => {
+      const maxMatch = tier.maxAmount == null || amount <= tier.maxAmount;
+      return amount >= tier.minAmount && maxMatch;
+    }) ?? sorted[sorted.length - 1];
+
+  return matched.fee;
+};
 
 const calculateOrganizerFinancials = (organizerId: string) => {
   const transactions = db.gatewayTransactions.findAll();
@@ -310,30 +396,27 @@ const calculateOrganizerFinancials = (organizerId: string) => {
 const calculateAvailableBalance = (organizerId: string) => calculateOrganizerFinancials(organizerId).available;
 
 export async function handleInitiatePayout(req: { body: PayoutRequestBody }) {
-  if (!isLencoConfigured()) {
-    return new Response(JSON.stringify({ message: 'Lenco gateway is not configured.' }), {
-      status: 503,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  const { organizerId, amount, destination, narration, currency } = req.body ?? {};
-  if (!organizerId || !destination) {
-    return new Response(JSON.stringify({ message: 'organizerId and destination are required.' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  if (destination.type !== 'bank_account' || !destination.accountNumber || !destination.bankCode || !destination.accountName) {
-    return new Response(JSON.stringify({ message: 'Invalid destination object. It must include type, accountNumber, bankCode, and accountName.' }), {
+  const { organizerId, amount, payoutMethodId, narration, currency } = req.body ?? {};
+  if (!organizerId || !payoutMethodId) {
+    return new Response(
+      JSON.stringify({ message: 'organizerId and payoutMethodId are required.' }),
+      {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+
+  const payoutMethod = db.payoutMethods.findById(payoutMethodId);
+  if (!payoutMethod || payoutMethod.userId !== organizerId) {
+    return new Response(JSON.stringify({ message: 'Payout method not found.' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
   const available = calculateAvailableBalance(organizerId);
-  const payoutAmount = amount ?? available;
+  const payoutAmount = typeof amount === 'number' ? amount : available;
 
   if (payoutAmount <= 0) {
     return new Response(JSON.stringify({ message: 'No balance available for payout.' }), {
@@ -349,29 +432,42 @@ export async function handleInitiatePayout(req: { body: PayoutRequestBody }) {
     });
   }
 
+  let feeAmount = 0;
+  try {
+    feeAmount = resolvePayoutFee(payoutAmount, payoutMethod.type);
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ message: err instanceof Error ? err.message : 'Unable to calculate payout fee.' }),
+      {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+
+  if (payoutAmount <= feeAmount) {
+    return new Response(
+      JSON.stringify({ message: 'Payout amount must be greater than the payout fee.' }),
+      {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+
+  const netAmount = payoutAmount - feeAmount;
   const reference = createReference('payout');
 
-  let transferResponse: unknown = null;
-  let payoutStatus: GatewayTransactionStatus = 'pending';
-
-  try {
-    transferResponse = await createTransfer({
-      reference,
-      amount: payoutAmount,
-      currency: currency || lencoConfig.currency,
-      narration: narration || 'Event organizer payout',
-      destination,
-    });
-    payoutStatus = 'succeeded';
-  } catch (error) {
-    if (error instanceof LencoClientError) {
-      console.error('Failed to initiate transfer', error.message);
-      payoutStatus = 'failed';
-    } else {
-      console.error('Unexpected transfer error', error);
-      payoutStatus = 'failed';
-    }
-  }
+  const metadata = {
+    payoutMethodId,
+    payoutMethodType: payoutMethod.type,
+    payoutAccountLabel: payoutMethod.details,
+    payoutAccountHolder: payoutMethod.accountInfo,
+    payoutFeeAmount: feeAmount,
+    payoutNetAmount: netAmount,
+    narration: narration || 'Manual payout request',
+    requiresManualApproval: true,
+  };
 
   const payoutTxn = db.gatewayTransactions.create({
     externalId: reference,
@@ -381,21 +477,27 @@ export async function handleInitiatePayout(req: { body: PayoutRequestBody }) {
     organizerId,
     amount: payoutAmount,
     currency: currency || lencoConfig.currency,
-    status: payoutStatus,
+    status: 'pending',
     provider: PAYMENT_PROVIDER,
-    metadata: { destination, narration, response: transferResponse },
+    metadata,
   });
 
-  const responseStatus = payoutStatus === 'failed' ? 502 : 201;
-
-  return new Response(JSON.stringify({
-    status: payoutStatus,
-    transaction: payoutTxn,
-    availableBalance: calculateAvailableBalance(organizerId),
-  }), {
-    status: responseStatus,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return new Response(
+    JSON.stringify({
+      status: 'pending' as GatewayTransactionStatus,
+      transaction: payoutTxn,
+      feeAmount,
+      netAmount,
+      availableBalance: calculateAvailableBalance(organizerId),
+      message: `Payout request submitted. Once approved you'll receive ${netAmount.toFixed(
+        2
+      )} after a ${feeAmount.toFixed(2)} payout fee.`,
+    }),
+    {
+      status: 202,
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
 }
 
 export async function handleGetOrganizerBalance(req: { params?: { organizerId?: string }; query?: { organizerId?: string } }) {
@@ -419,6 +521,7 @@ export async function handleGetOrganizerBalance(req: { params?: { organizerId?: 
       paidOut: financials.paidOut,
       pendingPayouts: financials.pendingPayouts,
     },
+    payoutFees: db.platformSettings.get().payoutFees,
     availableBalance: financials.available,
   }), {
     status: 200,
@@ -456,7 +559,13 @@ export async function handleGetOrganizerTransactions(req: {
     if (txn.purpose === 'payout') {
       type = 'Payout';
       amount = -Math.abs(txn.amount);
-      description = 'Organizer payout';
+      const fee = typeof txn.metadata?.payoutFeeAmount === 'number' ? txn.metadata.payoutFeeAmount : null;
+      const net = typeof txn.metadata?.payoutNetAmount === 'number' ? txn.metadata.payoutNetAmount : null;
+      const label = txn.metadata?.payoutAccountLabel ? ` → ${String(txn.metadata.payoutAccountLabel)}` : '';
+      description =
+        fee !== null && net !== null
+          ? `Payout request${label}. Net ${net.toFixed(2)} after fee ${fee.toFixed(2)}.`
+          : `Payout request${label}`;
     } else if (txn.status === 'refunded') {
       type = 'Refund';
       amount = -Math.abs(txn.amount);
@@ -520,6 +629,61 @@ export async function handleGetSubscriptionTransactions(req: {
       updatedAt: txn.updatedAt,
       metadata: txn.metadata ?? null,
     }));
+
+  return new Response(JSON.stringify({ data: transactions }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export async function handleGetUserTransactions(req: {
+  user?: User | null;
+  query?: { userId?: string };
+}) {
+  const requester = req.user ?? null;
+  const targetUserId = req.query?.userId ?? requester?.id;
+
+  if (!targetUserId) {
+    return new Response(JSON.stringify({ message: 'userId is required.' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (requester && requester.role !== 'admin' && requester.id !== targetUserId) {
+    return new Response(JSON.stringify({ message: 'Not authorized to view these transactions.' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const transactions = db.gatewayTransactions
+    .findAll()
+    .filter((txn) => txn.userId === targetUserId && txn.purpose !== 'payout')
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .map((txn) => {
+      const event = txn.eventId ? db.events.findById(txn.eventId) : null;
+      const reference = txn.reference ?? txn.lencoReference ?? txn.externalId;
+      return {
+        id: txn.id,
+        reference,
+        status: txn.status,
+        purpose: txn.purpose ?? 'ticket',
+        amount: txn.amount,
+        currency: txn.currency,
+        provider: txn.provider,
+        paymentMethod: txn.paymentMethod ?? null,
+        channel: txn.channel ?? null,
+        ticketId: txn.ticketId ?? null,
+        eventId: txn.eventId ?? null,
+        eventTitle: event?.title ?? null,
+        label:
+          (typeof txn.metadata?.label === 'string' && txn.metadata.label) ||
+          (txn.purpose === 'subscription' ? 'Subscription payment' : event?.title ?? 'Ticket purchase'),
+        createdAt: txn.createdAt,
+        updatedAt: txn.updatedAt,
+      };
+    });
 
   return new Response(JSON.stringify({ data: transactions }), {
     status: 200,

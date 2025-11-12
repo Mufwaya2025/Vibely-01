@@ -1,3 +1,20 @@
 {
-  "logs": []
+  "logs": [
+    {
+      "actorId": "admin-1",
+      "targetUserId": "admin-1",
+      "action": "notification_template_update",
+      "details": "Updated template \"Organizer Pro Upgrade\"",
+      "id": "audit_030d39a8-adbc-4c87-bac4-34b52cc452d2",
+      "timestamp": "2025-11-11T15:20:23.452Z"
+    },
+    {
+      "actorId": "admin-1",
+      "targetUserId": "admin-1",
+      "action": "notification_template_update",
+      "details": "Updated template \"Ticket Purchase Confirmation\"",
+      "id": "audit_1afd6698-2e71-4edc-83e5-96f770800fb7",
+      "timestamp": "2025-11-11T15:20:07.562Z"
+    }
+  ]
 }

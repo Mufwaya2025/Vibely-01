@@ -109,6 +109,7 @@ const io = new Server(httpServer, {
 registerMessagingHandlers(io);
 
 import { attachUser } from './middleware/attachUser';
+import { enforceActiveUser } from './middleware/enforceActiveUser';
 import { registerRoutes } from './routes';
 import { deviceAuthRateLimiter, ticketScanRateLimiter } from './middleware/rateLimit';
 import { scannerCors } from './middleware/cors';
@@ -120,6 +121,7 @@ app.use('/api/devices', scannerCors);
 app.use('/api/tickets/scan-secure', scannerCors);
 
 app.use(attachUser);
+app.use(enforceActiveUser);
 registerRoutes(app);
 
 // In production, serve the index.html file for any route that doesn't match an API endpoint

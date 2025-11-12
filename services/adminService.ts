@@ -8,6 +8,7 @@ import {
   FunnelMetrics,
   NotificationChannel,
   PlatformSettings,
+  GatewayTransaction,
   RefundCase,
   RefundStatus,
   RevenueTrendResponse,
@@ -143,6 +144,46 @@ export const refundTransaction = async (user: User, id: string) =>
     'Failed to refund transaction.'
   );
 
+export const getPayoutRequests = async (
+  user: User,
+  status: 'pending' | 'succeeded' | 'failed' | 'all' = 'pending'
+): Promise<{ data: GatewayTransaction[] }> =>
+  parseJson(
+    await apiFetch('/api/admin/payments/payouts', {
+      user,
+      query: status ? { status } : undefined,
+    }),
+    'Failed to load payout requests.'
+  );
+
+export const approvePayoutRequest = async (
+  user: User,
+  id: string,
+  body?: { note?: string }
+): Promise<{ transaction: GatewayTransaction; success: boolean; message: string }> =>
+  parseJson(
+    await apiFetch(`/api/admin/payments/payouts/${id}/approve`, {
+      method: 'POST',
+      user,
+      body,
+    }),
+    'Failed to approve payout request.'
+  );
+
+export const rejectPayoutRequest = async (
+  user: User,
+  id: string,
+  reason?: string
+): Promise<{ transaction: GatewayTransaction; success: boolean; message: string }> =>
+  parseJson(
+    await apiFetch(`/api/admin/payments/payouts/${id}/reject`, {
+      method: 'POST',
+      user,
+      body: { reason },
+    }),
+    'Failed to reject payout request.'
+  );
+
 export const getWebhookLogs = async (user: User, query?: Record<string, string>) =>
   parseJson(
     await apiFetch('/api/admin/payments/webhook-logs', { user, query }),
@@ -162,6 +203,25 @@ export const getPaymentSummary = async (user: User) =>
   parseJson(
     await apiFetch('/api/admin/payments/summary', { user }),
     'Failed to load payment summary.'
+  );
+
+export const getPlatformBalance = async (user: User) =>
+  parseJson(
+    await apiFetch('/api/admin/payments/platform-balance', { user }),
+    'Failed to load platform balance.'
+  );
+
+export const requestPlatformPayout = async (
+  user: User,
+  body: { amount: number; destination: Record<string, unknown>; narration?: string }
+) =>
+  parseJson(
+    await apiFetch('/api/admin/payments/platform-payouts', {
+      method: 'POST',
+      user,
+      body,
+    }),
+    'Failed to withdraw platform revenue.'
   );
 
 export const exportPayments = async (user: User) =>
@@ -349,7 +409,9 @@ export const getPlatformSettings = async (user: User): Promise<PlatformSettings>
 
 export const updatePlatformSettings = async (
   user: User,
-  settings: Partial<Pick<PlatformSettings, 'platformFeePercent' | 'payoutCurrency' | 'autoPayoutsEnabled'>>
+  settings: Partial<
+    Pick<PlatformSettings, 'platformFeePercent' | 'payoutCurrency' | 'autoPayoutsEnabled' | 'payoutFees'>
+  >
 ): Promise<PlatformSettings> =>
   parseJson(
     await apiFetch('/api/admin/settings/platform', {

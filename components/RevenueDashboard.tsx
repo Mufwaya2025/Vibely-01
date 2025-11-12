@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { User, Transaction, PayoutMethod } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { User, Transaction, PayoutMethod, PayoutFeeTier } from '../types';
 import { getFinancialSummary, FinancialSummary, getTransactions } from '../services/financialService';
 import { getPayoutMethods, requestPayout } from '../services/walletService';
 
@@ -42,7 +42,15 @@ const RevenueDashboard: React.FC<RevenueDashboardProps> = ({ user }) => {
     const [isAddMethodModalOpen, setIsAddMethodModalOpen] = useState(false);
     const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
     
-    const [toast, setToast] = useState<{ message: string; type: 'success' } | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    const sortPayoutMethods = (methods: PayoutMethod[]) =>
+        [...methods].sort((a, b) => {
+            if (a.isDefault === b.isDefault) {
+                return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+            }
+            return a.isDefault ? -1 : 1;
+        });
 
     useEffect(() => {
         const fetchData = async () => {
@@ -55,10 +63,10 @@ const RevenueDashboard: React.FC<RevenueDashboardProps> = ({ user }) => {
                 ]);
                 setSummary(summaryData);
                 setTransactions(transactionsData);
-                setPayoutMethods(methodsData);
+                setPayoutMethods(sortPayoutMethods(methodsData));
             } catch (error) {
                 console.error("Failed to load financial data:", error);
-                setToast({ message: 'Failed to load financial data.', type: 'success' });
+                setToast({ message: 'Failed to load financial data.', type: 'error' });
             } finally {
                 setIsLoading(false);
             }
@@ -67,7 +75,7 @@ const RevenueDashboard: React.FC<RevenueDashboardProps> = ({ user }) => {
     }, [user.id]);
 
     const handleAddMethodSuccess = (newMethod: PayoutMethod) => {
-        setPayoutMethods(prev => [...prev, newMethod]);
+        setPayoutMethods(prev => sortPayoutMethods([newMethod, ...prev.filter((m) => m.id !== newMethod.id)]));
         setToast({ message: 'Payout method added successfully!', type: 'success' });
     };
 
@@ -77,68 +85,195 @@ const RevenueDashboard: React.FC<RevenueDashboardProps> = ({ user }) => {
         const [isProcessing, setIsProcessing] = useState(false);
         const [error, setError] = useState('');
 
+        useEffect(() => {
+            if (!selectedMethod && payoutMethods.length > 0) {
+                setSelectedMethod(payoutMethods.find((m) => m.isDefault)?.id || payoutMethods[0].id);
+            }
+        }, [payoutMethods, selectedMethod]);
+
+        const methodRecord = payoutMethods.find((m) => m.id === selectedMethod) ?? null;
+
+        const feePreview = useMemo(() => {
+            if (!summary?.payoutFees || !methodRecord || amount <= 0) {
+                return null;
+            }
+            const tiers =
+                methodRecord.type === 'Bank'
+                    ? summary.payoutFees.bankAccount
+                    : summary.payoutFees.mobileMoney;
+            if (!tiers || tiers.length === 0) {
+                return null;
+            }
+            const sorted = [...tiers].sort((a, b) => a.minAmount - b.minAmount);
+            const minTier = sorted[0];
+            if (amount < minTier.minAmount) {
+                return {
+                    fee: minTier.fee,
+                    net: Math.max(amount - minTier.fee, 0),
+                    error: `Minimum payout for ${
+                        methodRecord.type === 'Bank' ? 'bank accounts' : 'mobile money'
+                    } is K${minTier.minAmount.toFixed(2)}.`,
+                };
+            }
+            const tier =
+                sorted.find(
+                    (candidate) =>
+                        amount >= candidate.minAmount &&
+                        (candidate.maxAmount == null || amount <= candidate.maxAmount)
+                ) ?? sorted[sorted.length - 1];
+            return {
+                fee: tier.fee,
+                net: Math.max(amount - tier.fee, 0),
+            };
+        }, [amount, methodRecord, summary?.payoutFees]);
+
         const handlePayoutRequest = async () => {
-             if (!selectedMethod || amount <= 0) {
-                 setError("Please select a method and enter a valid amount.");
-                 return;
-             }
-             if (summary && amount > summary.balance) {
-                 setError("Payout amount cannot exceed your available balance.");
-                 return;
-             }
+            if (!selectedMethod || amount <= 0) {
+                setError("Please select a method and enter a valid amount.");
+                return;
+            }
+            if (summary && amount > summary.balance) {
+                setError("Payout amount cannot exceed your available balance.");
+                return;
+            }
+            if (!methodRecord) {
+                setError("Payout method could not be found. Please try again.");
+                return;
+            }
+            if (!summary?.payoutFees) {
+                setError("Payout fee configuration is unavailable. Please contact support.");
+                return;
+            }
+            if (!feePreview || feePreview.error) {
+                setError(feePreview?.error ?? "Unable to calculate payout fee for this amount.");
+                return;
+            }
+
             setIsProcessing(true);
             setError('');
             try {
-                const result = await requestPayout(user.id, amount, selectedMethod);
+                const result = await requestPayout(user.id, amount, methodRecord);
+                const [updatedSummary, updatedTransactions] = await Promise.all([
+                    getFinancialSummary(user.id),
+                    getTransactions(user.id),
+                ]);
+                setSummary(updatedSummary);
+                setTransactions(updatedTransactions);
+                setToast({ message: result.message, type: result.success ? 'success' : 'error' });
                 if (result.success) {
-                    const [updatedSummary, updatedTransactions] = await Promise.all([
-                        getFinancialSummary(user.id),
-                        getTransactions(user.id),
-                    ]);
-                    setSummary(updatedSummary);
-                    setTransactions(updatedTransactions);
-                    setToast({ message: result.message, type: 'success' });
                     setIsPayoutModalOpen(false);
-                } else {
+                } else if (result.message) {
                     setError(result.message);
                 }
             } catch (e) {
-                setError("An unexpected error occurred.");
+                const message = e instanceof Error ? e.message : 'An unexpected error occurred.';
+                setError(message);
+                setToast({ message, type: 'error' });
             } finally {
                 setIsProcessing(false);
             }
+        };
 
-        }
+        const renderFeePreview = () => {
+            if (!methodRecord || amount <= 0 || !summary?.payoutFees) {
+                return null;
+            }
+            if (!feePreview) {
+                return (
+                    <p className="text-xs text-gray-500">
+                        Payout charges will be calculated once you enter an amount.
+                    </p>
+                );
+            }
+            if (feePreview.error) {
+                return <p className="text-xs text-red-600">{feePreview.error}</p>;
+            }
+            return (
+                <div className="space-y-1 text-xs text-slate-600">
+                    <div className="flex justify-between">
+                        <span>Payout charge</span>
+                        <span className="font-semibold">{formatCurrency(feePreview.fee, summary.currency)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span>Estimated arrival</span>
+                        <span className="font-semibold">
+                            {formatCurrency(feePreview.net, summary.currency)}
+                        </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                        Request will be queued for admin approval before funds are released.
+                    </p>
+                </div>
+            );
+        };
+
         return (
-             <div className="fixed inset-0 z-[1000] bg-black bg-opacity-75 flex justify-center items-center p-4" onClick={() => setIsPayoutModalOpen(false)}>
+            <div
+                className="fixed inset-0 z-[1000] bg-black bg-opacity-75 flex justify-center items-center p-4"
+                onClick={() => setIsPayoutModalOpen(false)}
+            >
                 <div className="bg-white rounded-2xl shadow-xl w-full max-w-md animate-fade-in-up" onClick={e => e.stopPropagation()}>
                     <div className="p-6 border-b">
                         <h2 className="text-xl font-bold text-gray-900">Request Payout</h2>
                     </div>
                     <div className="p-6 space-y-4">
                         <div>
-                            <label htmlFor="payout-amount" className="block text-sm font-medium text-gray-700">Amount (Available: {formatCurrency(summary?.balance || 0, summary?.currency)})</label>
-                            <input type="number" id="payout-amount" value={amount} onChange={e => setAmount(Number(e.target.value))} min="1" max={summary?.balance} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500" />
+                            <label htmlFor="payout-amount" className="block text-sm font-medium text-gray-700">
+                                Amount (Available: {formatCurrency(summary?.balance || 0, summary?.currency)})
+                            </label>
+                            <input
+                                type="number"
+                                id="payout-amount"
+                                value={amount}
+                                onChange={e => setAmount(Number(e.target.value))}
+                                min="1"
+                                max={summary?.balance}
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                            />
                         </div>
                         <div>
-                            <label htmlFor="payout-method" className="block text-sm font-medium text-gray-700">Payout to</label>
-                            <select id="payout-method" value={selectedMethod} onChange={e => setSelectedMethod(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+                            <label htmlFor="payout-method" className="block text-sm font-medium text-gray-700">
+                                Payout to
+                            </label>
+                            <select
+                                id="payout-method"
+                                value={selectedMethod}
+                                onChange={e => setSelectedMethod(e.target.value)}
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                            >
                                 <option value="">Select a method</option>
-                                {payoutMethods.map(m => <option key={m.id} value={m.id}>{m.details}</option>)}
+                                {payoutMethods.map(m => (
+                                    <option key={m.id} value={m.id}>
+                                        {`${m.details} — ${m.accountInfo}`}
+                                    </option>
+                                ))}
                             </select>
+                        </div>
+                        <div className="rounded-lg bg-slate-50 px-3 py-2">
+                            {renderFeePreview()}
                         </div>
                         {error && <p className="text-sm text-red-600">{error}</p>}
                     </div>
                     <div className="p-4 bg-gray-50 border-t flex justify-end space-x-2">
-                        <button type="button" onClick={() => setIsPayoutModalOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancel</button>
-                        <button onClick={handlePayoutRequest} disabled={isProcessing} className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md hover:bg-purple-700 disabled:bg-gray-400">
-                           {isProcessing ? 'Processing...' : 'Request Payout'}
+                        <button
+                            type="button"
+                            onClick={() => setIsPayoutModalOpen(false)}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handlePayoutRequest}
+                            disabled={isProcessing || payoutMethods.length === 0}
+                            className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md hover:bg-purple-700 disabled:bg-gray-400"
+                        >
+                            {isProcessing ? 'Processing...' : 'Request Payout'}
                         </button>
                     </div>
                 </div>
             </div>
-        )
-    }
+        );
+    };
 
     if (isLoading) {
         return <div className="p-8 text-center">Loading financial data...</div>;
@@ -147,6 +282,8 @@ const RevenueDashboard: React.FC<RevenueDashboardProps> = ({ user }) => {
     if (!summary) {
         return <div className="p-8 text-center text-red-600">Could not load financial data.</div>;
     }
+
+    const hasPayoutMethods = payoutMethods.length > 0;
 
     const transactionIcons: { [key in Transaction['type']]: React.ReactNode } = {
         Sale: <ArrowDownCircleIcon className="w-6 h-6 text-green-500" />,
@@ -217,10 +354,15 @@ const RevenueDashboard: React.FC<RevenueDashboardProps> = ({ user }) => {
                          <button
                             onClick={() => setIsPayoutModalOpen(true)}
                             className="mt-4 w-full flex items-center justify-center px-4 py-3 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors shadow-sm disabled:bg-gray-400"
-                            disabled={summary.balance <= 0}
+                            disabled={summary.balance <= 0 || !hasPayoutMethods}
                          >
                             <SendIcon className="w-5 h-5 mr-2" /> Request Payout
                         </button>
+                        {!hasPayoutMethods && (
+                            <p className="mt-2 text-xs text-amber-600">
+                                Add a payout method to submit payout requests.
+                            </p>
+                        )}
                     </div>
                     <div className="bg-white px-6 py-7 sm:px-7 sm:py-8 rounded-2xl shadow-sm border border-slate-100">
                         <div className="flex justify-between items-center mb-4">
@@ -241,6 +383,21 @@ const RevenueDashboard: React.FC<RevenueDashboardProps> = ({ user }) => {
                                 </li>
                             ))}
                         </ul>
+                        {summary?.payoutFees && (
+                            <div className="mt-6 space-y-3">
+                                <h3 className="text-sm font-semibold text-slate-800">Configured payout charges</h3>
+                                <PayoutFeeSchedule
+                                    title="Mobile Money"
+                                    tiers={summary.payoutFees.mobileMoney ?? []}
+                                    currency={summary.currency}
+                                />
+                                <PayoutFeeSchedule
+                                    title="Bank Accounts"
+                                    tiers={summary.payoutFees.bankAccount ?? []}
+                                    currency={summary.currency}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -259,6 +416,31 @@ const StatCard: React.FC<{ title: string; value: string | number; subtext?: stri
     </div>
 );
 
+const PayoutFeeSchedule: React.FC<{ title: string; tiers: PayoutFeeTier[]; currency: string }> = ({
+    title,
+    tiers,
+    currency,
+}) => (
+    <div className="rounded-lg border border-slate-200 p-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{title}</p>
+        {tiers.length === 0 ? (
+            <p className="mt-2 text-xs text-slate-500">No tiers configured.</p>
+        ) : (
+            <ul className="mt-3 space-y-1 text-xs text-slate-600">
+                {tiers.map((tier, idx) => (
+                    <li key={`${title}-${idx}`} className="flex items-center justify-between">
+                        <span>
+                            {tier.maxAmount == null
+                                ? `K${tier.minAmount.toLocaleString()}+`
+                                : `K${tier.minAmount.toLocaleString()} - K${tier.maxAmount.toLocaleString()}`}
+                        </span>
+                        <span className="font-semibold">{formatCurrency(tier.fee, currency)}</span>
+                    </li>
+                ))}
+            </ul>
+        )}
+    </div>
+);
+
 
 export default RevenueDashboard;
-

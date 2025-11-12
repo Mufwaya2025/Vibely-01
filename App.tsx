@@ -14,6 +14,7 @@ import EventDetailModal from './components/EventDetailModal';
 import PurchaseConfirmationModal from './components/PurchaseConfirmationModal';
 import LoginModal from './components/LoginModal';
 import MyTickets from './components/MyTickets';
+import TransactionHistoryModal from './components/TransactionHistoryModal';
 import TicketViewModal from './components/TicketViewModal';
 import ReviewModal from './components/ReviewModal';
 import Toast from './components/Toast';
@@ -35,10 +36,10 @@ const App: React.FC = () => {
   const [tickets, setTickets] = useState<(Ticket & { event: Event })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ message: string, type: 'success' } | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Modal State
-  const [activeModal, setActiveModal] = useState<'details' | 'purchase' | 'login' | 'myTickets' | 'viewTicket' | 'review' | 'subscription' | 'messaging' | null>(null);
+  const [activeModal, setActiveModal] = useState<'details' | 'purchase' | 'login' | 'myTickets' | 'viewTicket' | 'review' | 'subscription' | 'messaging' | 'transactions' | null>(null);
   const [messagingRecipient, setMessagingRecipient] = useState<User | null>(null);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -171,7 +172,7 @@ const App: React.FC = () => {
         type: 'success',
       });
     } else {
-      setToast({ message: 'Failed to update featured state.', type: 'success' });
+      setToast({ message: 'Failed to update featured state.', type: 'error' });
     }
     setUpdatingEventId(null);
   };
@@ -224,26 +225,64 @@ const App: React.FC = () => {
     setActiveModal('purchase');
   };
 
+  type PurchaseFulfillmentContext = {
+    issuedTicket?: Ticket | null;
+    existingTicketId?: string | null;
+  };
+
   const handlePurchaseSuccess = async (
     event: Event,
     details: PaymentDetails,
     shouldSave: boolean,
     transactionId: string,
-    ticketTierId?: string
+    ticketTierId?: string,
+    fulfillment?: PurchaseFulfillmentContext
   ) => {
     if (!user) return;
-    const newTicket = await createTicket(event, user, ticketTierId);
-    setTickets(prev => [...prev, { ...newTicket, event }]);
+
+    let createdTicket: Ticket | null = null;
+
+    if (fulfillment?.issuedTicket) {
+      createdTicket = fulfillment.issuedTicket;
+    } else if (fulfillment?.existingTicketId) {
+      createdTicket = {
+        ticketId: fulfillment.existingTicketId,
+        eventId: event.id,
+        code: fulfillment.existingTicketId,
+        status: 'valid' as Ticket['status'],
+        holderName: user.name,
+        holderEmail: user.email,
+        createdAt: new Date().toISOString(),
+        tierId: ticketTierId,
+        tierName: event.ticketTiers?.find((tier) => tier.id === ticketTierId)?.name,
+      };
+    } else {
+      createdTicket = await createTicket(event, user, ticketTierId);
+      if (transactionId) {
+        attachTicketToTransaction(transactionId, createdTicket.ticketId);
+      }
+    }
+
+    if (!createdTicket) {
+      return;
+    }
+
+    setTickets((prev) => {
+      if (prev.some((ticket) => ticket.ticketId === createdTicket!.ticketId)) {
+        return prev;
+      }
+      return [...prev, { ...createdTicket!, event }];
+    });
     setActiveModal(null);
     setToast({ message: `Successfully purchased ticket for ${event.title}!`, type: 'success' });
     if (shouldSave) {
-        savePaymentDetails(details);
+      savePaymentDetails(details);
     }
-    // Update sold count on the event
-    setEvents(prevEvents => prevEvents.map(e => e.id === event.id ? {...e, ticketsSold: (e.ticketsSold || 0) + 1} : e));
-    if (transactionId) {
-      attachTicketToTransaction(transactionId, newTicket.ticketId);
-    }
+    setEvents((prevEvents) =>
+      prevEvents.map((e) =>
+        e.id === event.id ? { ...e, ticketsSold: (e.ticketsSold || 0) + 1 } : e
+      )
+    );
   };
   
   const handleCreateEvent = async (eventData: Omit<Event, 'id' | 'organizer'>) => {
@@ -266,6 +305,24 @@ const App: React.FC = () => {
       setToast({ message: `Event "${eventData.title}" updated successfully!`, type: 'success' });
   };
 
+  const handleTicketIssuedFromServer = (ticket: Ticket) => {
+    const relatedEvent = events.find((evt) => evt.id === ticket.eventId);
+    if (!relatedEvent) {
+      return;
+    }
+    setTickets((prev) => {
+      if (prev.some((existing) => existing.ticketId === ticket.ticketId)) {
+        return prev;
+      }
+      return [...prev, { ...ticket, event: relatedEvent }];
+    });
+    setEvents((prev) =>
+      prev.map((evt) =>
+        evt.id === ticket.eventId ? { ...evt, ticketsSold: (evt.ticketsSold || 0) + 1 } : evt
+      )
+    );
+  };
+
   const handleAdminUpdateEventStatus = async (eventId: string, status: string) => {
     if (!user) return;
     setUpdatingEventId(eventId);
@@ -279,7 +336,7 @@ const App: React.FC = () => {
       );
       setToast({ message: `Event status set to ${status}.`, type: 'success' });
     } else {
-      setToast({ message: 'Failed to update event status.', type: 'success' });
+      setToast({ message: 'Failed to update event status.', type: 'error' });
     }
     setUpdatingEventId(null);
   };
@@ -562,7 +619,23 @@ const App: React.FC = () => {
         />
       )}
       {activeModal === 'login' && <LoginModal onClose={() => setActiveModal(null)} onLoginSuccess={handleLoginSuccess} initialMode={mode} />}
-      {activeModal === 'myTickets' && <MyTickets tickets={tickets} onClose={() => setActiveModal(null)} onViewTicket={(ticket) => { setSelectedTicket(ticket); setActiveModal('viewTicket'); }} onLeaveReview={(ticket) => { setSelectedTicket(ticket); setActiveModal('review'); }}/>}
+      {activeModal === 'myTickets' && user && (
+        <MyTickets
+          user={user}
+          tickets={tickets}
+          onClose={() => setActiveModal(null)}
+          onViewTicket={(ticket) => {
+            setSelectedTicket(ticket);
+            setActiveModal('viewTicket');
+          }}
+          onLeaveReview={(ticket) => {
+            setSelectedTicket(ticket);
+            setActiveModal('review');
+          }}
+          onTicketIssued={handleTicketIssuedFromServer}
+          onViewTransactions={() => setActiveModal('transactions')}
+        />
+      )}
       {activeModal === 'viewTicket' && selectedTicket && <TicketViewModal ticket={selectedTicket} onClose={() => setActiveModal('myTickets')} userLocation={userLocation} />}
       {activeModal === 'review' && selectedTicket && <ReviewModal ticket={selectedTicket} onClose={() => setActiveModal('myTickets')} onSubmit={handleSubmitReview} />}
       {activeModal === 'subscription' && user && (
@@ -577,6 +650,13 @@ const App: React.FC = () => {
           currentUser={user} 
           recipient={messagingRecipient} 
           onClose={() => setActiveModal(null)} 
+        />
+      )}
+      {activeModal === 'transactions' && user && (
+        <TransactionHistoryModal
+          user={user}
+          onClose={() => setActiveModal(null)}
+          onTicketIssued={handleTicketIssuedFromServer}
         />
       )}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}

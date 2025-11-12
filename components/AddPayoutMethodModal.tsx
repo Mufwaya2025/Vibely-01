@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PayoutMethod } from '../types';
-import { addPayoutMethod } from '../services/walletService';
+import { addPayoutMethod, CreatePayoutMethodInput } from '../services/walletService';
 import BankIcon from './icons/BankIcon';
 import MobileMoneyIcon from './icons/MobileMoneyIcon';
 
@@ -15,6 +15,7 @@ const AddPayoutMethodModal: React.FC<AddPayoutMethodModalProps> = ({ user, onClo
   const [accountHolder, setAccountHolder] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [bankName, setBankName] = useState('');
+  const [bankCode, setBankCode] = useState('');
   const [mobileMoneyProvider, setMobileMoneyProvider] = useState('MTN');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,22 +27,33 @@ const AddPayoutMethodModal: React.FC<AddPayoutMethodModalProps> = ({ user, onClo
     setError('');
 
     try {
-      const newMethodData: Omit<PayoutMethod, 'id' | 'isDefault'> = methodType === 'Bank'
-        ? { type: 'Bank', details: `${bankName} - **** ${accountNumber.slice(-4)}`, accountInfo: accountHolder }
-        : { type: 'MobileMoney', details: `${mobileMoneyProvider} - ${phoneNumber.slice(0, 3)}...${phoneNumber.slice(-2)}`, accountInfo: accountHolder };
-      
+      const newMethodData: CreatePayoutMethodInput = methodType === 'Bank'
+        ? {
+            type: 'Bank',
+            accountInfo: accountHolder,
+            bankName,
+            bankCode,
+            accountNumber,
+          }
+        : {
+            type: 'MobileMoney',
+            accountInfo: accountHolder,
+            mobileMoneyProvider,
+            phoneNumber,
+          };
+
       const result = await addPayoutMethod(user.id, newMethodData);
       onSuccess(result);
       onClose();
     } catch (err) {
-      setError('Failed to add payout method. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to add payout method. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
   
   const isFormValid = accountHolder && (
-    (methodType === 'Bank' && accountNumber && bankName) || 
+    (methodType === 'Bank' && accountNumber && bankName && bankCode) || 
     (methodType === 'MobileMoney' && phoneNumber && mobileMoneyProvider)
   );
 
@@ -77,6 +89,10 @@ const AddPayoutMethodModal: React.FC<AddPayoutMethodModalProps> = ({ user, onClo
                 <div>
                   <label htmlFor="accountNumber" className="block text-sm font-medium text-gray-700">Account Number</label>
                   <input type="text" id="accountNumber" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500" />
+                </div>
+                <div>
+                  <label htmlFor="bankCode" className="block text-sm font-medium text-gray-700">Bank Sort Code</label>
+                  <input type="text" id="bankCode" value={bankCode} onChange={e => setBankCode(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500" />
                 </div>
               </>
             ) : (

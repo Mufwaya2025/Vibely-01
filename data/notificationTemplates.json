@@ -1,0 +1,24 @@
+{
+  "templates": [
+    {
+      "id": "tmpl-ticket-confirmation",
+      "name": "Ticket Purchase Confirmation",
+      "channel": "email",
+      "audienceDescription": "Attendees who successfully purchase tickets",
+      "subject": "Your Vibely ticket is confirmed!",
+      "body": "Hi {{name}}, thanks for purchasing tickets. We will see you at {{eventName}}.",
+      "createdAt": "2025-11-11T15:19:36.344Z",
+      "updatedAt": "2025-11-11T15:20:07.560Z"
+    },
+    {
+      "id": "tmpl-pro-upgrade",
+      "name": "Organizer Pro Upgrade",
+      "channel": "email",
+      "audienceDescription": "Organizers upgrading to Pro",
+      "subject": "Welcome to Vibely Pro 🎉",
+      "body": "Hi {{name}}, Pro unlocks analytics, payouts, and more. Let us know how we can help.",
+      "createdAt": "2025-11-11T15:19:36.344Z",
+      "updatedAt": "2025-11-11T15:20:23.450Z"
+    }
+  ]
+}

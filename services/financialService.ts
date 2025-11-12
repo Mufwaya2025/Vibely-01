@@ -1,4 +1,4 @@
-import { Transaction } from '../types';
+import { Transaction, PayoutFeeSettings } from '../types';
 import { apiFetchJson } from '../utils/apiClient';
 
 export interface FinancialSummary {
@@ -10,6 +10,7 @@ export interface FinancialSummary {
   } | null;
   balance: number;
   currency: string;
+  payoutFees: PayoutFeeSettings;
 }
 
 export const getFinancialSummary = async (userId: string): Promise<FinancialSummary> => {
@@ -25,6 +26,7 @@ export const getFinancialSummary = async (userId: string): Promise<FinancialSumm
         pendingPayouts: number;
       };
       availableBalance: number;
+      payoutFees: PayoutFeeSettings;
     }>(`/api/payments/organizers/${userId}/balance`),
     apiFetchJson<{ data: Transaction[] }>(`/api/payments/organizers/${userId}/transactions?limit=10`),
   ]);
@@ -42,6 +44,7 @@ export const getFinancialSummary = async (userId: string): Promise<FinancialSumm
       : null,
     balance: balance.availableBalance,
     currency: balance.currency,
+    payoutFees: balance.payoutFees,
   };
 };
 

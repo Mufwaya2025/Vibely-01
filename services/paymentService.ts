@@ -1,4 +1,4 @@
-import { PaymentDetails, PaymentMethod, User } from '../types';
+import { GatewayTransactionStatus, PaymentDetails, PaymentMethod, Ticket, User } from '../types';
 import { apiFetch, apiFetchJson } from '../utils/apiClient';
 import { addPendingReference, removePendingReference } from './pendingTransactionService';
 import { ensureLencoWidget } from '../utils/lenco';
@@ -68,6 +68,7 @@ export interface ProcessPaymentResult {
   reference: string;
   transaction?: Record<string, unknown>;
   updatedUser?: User | null;
+  issuedTicket?: Ticket | null;
 }
 
 export const processPayment = async (
@@ -159,6 +160,7 @@ export const processPayment = async (
           status: string;
           transaction?: Record<string, unknown>;
           updatedUser?: User | null;
+          issuedTicket?: Ticket | null;
         }>('/api/payments/verify', {
           method: 'POST',
           body: { reference: session.reference },
@@ -170,6 +172,7 @@ export const processPayment = async (
           transactionId: (verification.transaction as any)?.id ?? '',
           transaction: verification.transaction,
           updatedUser: verification.updatedUser ?? null,
+          issuedTicket: verification.issuedTicket ?? null,
         });
       } catch (error) {
         console.error('Verification failed', error);
@@ -260,12 +263,31 @@ export interface SubscriptionTransactionSummary {
   metadata: Record<string, unknown> | null;
 }
 
+export interface UserTransactionSummary {
+  id: string;
+  reference: string | null;
+  status: GatewayTransactionStatus;
+  purpose: string;
+  amount: number;
+  currency: string;
+  provider: string;
+  paymentMethod: string | null;
+  channel: string | null;
+  label: string;
+  ticketId: string | null;
+  eventId: string | null;
+  eventTitle: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const verifyPaymentReference = async (reference: string): Promise<ProcessPaymentResult> => {
   const verification = await apiFetchJson<{
     success: boolean;
     status: string;
     transaction?: Record<string, unknown>;
     updatedUser?: User | null;
+    issuedTicket?: Ticket | null;
   }>('/api/payments/verify', {
     method: 'POST',
     body: { reference },
@@ -278,6 +300,7 @@ export const verifyPaymentReference = async (reference: string): Promise<Process
     transaction: verification.transaction,
     updatedUser: verification.updatedUser ?? null,
     reference,
+    issuedTicket: verification.issuedTicket ?? null,
   };
 
   if (result.success) {
@@ -291,6 +314,15 @@ export const fetchSubscriptionTransactions = async (
 ): Promise<SubscriptionTransactionSummary[]> => {
   const response = await apiFetchJson<{ data: SubscriptionTransactionSummary[] }>('/api/payments/subscriptions', {
     user,
+  });
+  return response.data;
+};
+
+export const fetchUserTransactions = async (
+  userId: string
+): Promise<UserTransactionSummary[]> => {
+  const response = await apiFetchJson<{ data: UserTransactionSummary[] }>('/api/payments/user-transactions', {
+    query: { userId },
   });
   return response.data;
 };

@@ -16,10 +16,12 @@ import RevenueDashboard from './RevenueDashboard';
 import SettingsDashboard from './SettingsDashboard';
 import SubscriptionModal from './SubscriptionModal';
 import ManagerMessaging from './ManagerMessaging';
+import TransactionHistoryPanel from './TransactionHistoryPanel';
 import ListIcon from './icons/ListIcon';
 import ChartBarIcon from './icons/ChartBarIcon';
 import WalletIcon from './icons/WalletIcon';
 import CreditCardIcon from './icons/CreditCardIcon';
+import BankIcon from './icons/BankIcon';
 import CogIcon from './icons/CogIcon';
 import PlusCircleIcon from './icons/PlusCircleIcon';
 import QrCodeIcon from './icons/QrCodeIcon';
@@ -36,7 +38,15 @@ interface ManagerDashboardProps {
   onNavigateHome?: () => void;
 }
 
-type Tab = 'events' | 'analytics' | 'revenue' | 'subscriptions' | 'settings' | 'scanner' | 'messages';
+type Tab =
+  | 'events'
+  | 'analytics'
+  | 'revenue'
+  | 'transactions'
+  | 'subscriptions'
+  | 'settings'
+  | 'scanner'
+  | 'messages';
 
 const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
   user,
@@ -361,6 +371,20 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
         return <AnalysisDashboard user={user} events={events} />;
       case 'revenue':
         return <RevenueDashboard user={user} />;
+      case 'transactions':
+        return (
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md space-y-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Attendee Transactions</h2>
+                <p className="text-sm text-slate-600">
+                  Review your personal ticket purchases and keep pending payments in sync.
+                </p>
+              </div>
+            </div>
+            <TransactionHistoryPanel user={user} variant="full" />
+          </div>
+        );
       case 'subscriptions':
         return (
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md space-y-6">
@@ -637,8 +661,14 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
               <NavItem tab="analytics" icon={<ChartBarIcon className="w-5 h-5" />} label="Analytics" description="Track" />
               <NavItem tab="revenue" icon={<WalletIcon className="w-5 h-5" />} label="Revenue" description="Finance" />
               <NavItem
-                tab="subscriptions"
+                tab="transactions"
                 icon={<CreditCardIcon className="w-5 h-5" />}
+                label="Transactions"
+                description="Receipts"
+              />
+              <NavItem
+                tab="subscriptions"
+                icon={<BankIcon className="w-5 h-5" />}
                 label="Subs"
                 description="History"
               />

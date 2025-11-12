@@ -5,6 +5,8 @@ interface TransactionDetailModalProps {
   transaction: GatewayTransaction | null;
   onClose: () => void;
   onRequestRefund: (transaction: GatewayTransaction) => void;
+  onVerifyTransaction: (transaction: GatewayTransaction) => void;
+  isVerifying?: boolean;
 }
 
 const formatAmount = (amount: number, currency: string) =>
@@ -18,6 +20,8 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   transaction,
   onClose,
   onRequestRefund,
+  onVerifyTransaction,
+  isVerifying = false,
 }) => {
   if (!transaction) return null;
 
@@ -108,13 +112,21 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           )}
         </div>
 
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-wrap gap-3 items-center justify-between">
           <button
             onClick={onClose}
             className="px-4 py-2 rounded-md text-sm font-semibold text-gray-600 hover:bg-gray-200 transition-colors"
           >
             Close
           </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => transaction && onVerifyTransaction(transaction)}
+              disabled={!transaction.reference || isVerifying}
+              className="px-4 py-2 rounded-md text-sm font-semibold border border-purple-200 text-purple-600 hover:bg-purple-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isVerifying ? 'Verifying…' : 'Verify with Lenco'}
+            </button>
           <button
             onClick={() => onRequestRefund(transaction)}
             disabled={!refundable}
@@ -126,6 +138,7 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           >
             {refundable ? 'Refund Transaction' : 'Not Refundable'}
           </button>
+          </div>
         </div>
       </div>
     </div>

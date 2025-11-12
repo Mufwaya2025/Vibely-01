@@ -28,13 +28,79 @@ export async function handleAdminGetPlatformSettings(req: AdminRequest) {
   return jsonResponse(settings);
 }
 
+const normalizeTierValue = (value: unknown) => {
+  if (value === '' || value === null || value === undefined) {
+    return null;
+  }
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) {
+    throw new Error('All payout fee fields must be numeric.');
+  }
+  return parsed;
+};
+
+const normalizePayoutFeeChannel = (
+  label: string,
+  tiers: unknown,
+  fallback: PlatformSettings['payoutFees'][keyof PlatformSettings['payoutFees']]
+) => {
+  if (!tiers) return fallback;
+  if (!Array.isArray(tiers) || tiers.length === 0) {
+    throw new Error(`${label} payout fees require at least one tier.`);
+  }
+  return tiers
+    .map((tier, index) => {
+      const minAmount = normalizeTierValue((tier as any)?.minAmount);
+      const maxAmountRaw = normalizeTierValue((tier as any)?.maxAmount);
+      const fee = normalizeTierValue((tier as any)?.fee);
+
+      if (typeof minAmount !== 'number' || minAmount < 0) {
+        throw new Error(`${label} tier ${index + 1}: minAmount must be a positive number.`);
+      }
+      if (fee === null || typeof fee !== 'number' || fee < 0) {
+        throw new Error(`${label} tier ${index + 1}: fee must be a positive number.`);
+      }
+      const maxAmount =
+        maxAmountRaw === null ? null : (typeof maxAmountRaw === 'number' ? maxAmountRaw : null);
+      if (maxAmount !== null && maxAmount <= minAmount) {
+        throw new Error(`${label} tier ${index + 1}: maxAmount must be greater than minAmount.`);
+      }
+
+      return {
+        minAmount,
+        maxAmount,
+        fee,
+      };
+    })
+    .sort((a, b) => a.minAmount - b.minAmount);
+};
+
+const normalizePayoutFeesPayload = (
+  incoming: any,
+  current: PlatformSettings['payoutFees']
+): PlatformSettings['payoutFees'] => {
+  if (!incoming) {
+    return current;
+  }
+
+  const mobileMoney = normalizePayoutFeeChannel('Mobile money', incoming.mobileMoney, current.mobileMoney);
+  const bankAccount = normalizePayoutFeeChannel('Bank account', incoming.bankAccount, current.bankAccount);
+
+  return {
+    mobileMoney,
+    bankAccount,
+  };
+};
+
 export async function handleAdminUpdatePlatformSettings(
-  req: AdminRequest<Partial<Pick<PlatformSettings, 'platformFeePercent' | 'payoutCurrency' | 'autoPayoutsEnabled'>>>
+  req: AdminRequest<
+    Partial<Pick<PlatformSettings, 'platformFeePercent' | 'payoutCurrency' | 'autoPayoutsEnabled' | 'payoutFees'>>
+  >
 ) {
   const auth = requireAdmin(req.user);
   if (auth) return auth;
 
-  const { platformFeePercent, payoutCurrency, autoPayoutsEnabled } = req.body ?? {};
+  const { platformFeePercent, payoutCurrency, autoPayoutsEnabled, payoutFees } = req.body ?? {};
   if (
     typeof platformFeePercent !== 'number' ||
     platformFeePercent < 0 ||
@@ -43,10 +109,24 @@ export async function handleAdminUpdatePlatformSettings(
     return jsonResponse({ message: 'platformFeePercent must be between 0 and 25.' }, 400);
   }
 
+  const currentSettings = db.platformSettings.get();
+  let normalizedPayoutFees = currentSettings.payoutFees;
+  if (payoutFees) {
+    try {
+      normalizedPayoutFees = normalizePayoutFeesPayload(payoutFees, currentSettings.payoutFees);
+    } catch (err) {
+      return jsonResponse(
+        { message: err instanceof Error ? err.message : 'Invalid payout fee configuration.' },
+        400
+      );
+    }
+  }
+
   const updated = db.platformSettings.update({
     platformFeePercent,
-    payoutCurrency: payoutCurrency ?? db.platformSettings.get().payoutCurrency,
-    autoPayoutsEnabled: autoPayoutsEnabled ?? db.platformSettings.get().autoPayoutsEnabled,
+    payoutCurrency: payoutCurrency ?? currentSettings.payoutCurrency,
+    autoPayoutsEnabled: autoPayoutsEnabled ?? currentSettings.autoPayoutsEnabled,
+    payoutFees: normalizedPayoutFees,
     updatedBy: req.user!.id,
   });
 
