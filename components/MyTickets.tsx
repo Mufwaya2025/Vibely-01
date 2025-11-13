@@ -28,11 +28,11 @@ const MyTickets: React.FC<MyTicketsProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-75 z-[1000] flex justify-center items-center p-4"
+      className="fixed inset-0 z-[1000] flex items-start justify-center bg-black bg-opacity-75 p-4 overflow-y-auto lg:items-center"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden animate-fade-in-up flex flex-col"
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-none lg:max-h-[90vh] overflow-hidden animate-fade-in-up flex flex-col my-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 border-b border-slate-100">
