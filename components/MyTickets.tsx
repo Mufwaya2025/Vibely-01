@@ -65,7 +65,7 @@ const MyTickets: React.FC<MyTicketsProps> = ({
         </div>
         <div className="flex-1 bg-slate-50 overflow-hidden">
           <div className="h-full overflow-y-auto p-6">
-            <div className="grid gap-6 lg:grid-cols-[1.3fr,0.7fr]">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr,0.7fr]">
               <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="border-b border-slate-100 p-5">
                   <h3 className="text-xl font-semibold text-slate-900">My Tickets</h3>
@@ -144,7 +144,7 @@ const MyTickets: React.FC<MyTicketsProps> = ({
               </div>
 
               <div className="rounded-2xl border border-purple-100 bg-gradient-to-b from-white to-purple-50 shadow-sm">
-                <div className="flex flex-col gap-2 border-b border-purple-100 p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-2 border-b border-purple-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.3em] text-purple-400">Payments</p>
                     <h3 className="text-xl font-semibold text-slate-900">Recent Transactions</h3>
@@ -153,7 +153,7 @@ const MyTickets: React.FC<MyTicketsProps> = ({
                   {onViewTransactions && (
                     <button
                       onClick={onViewTransactions}
-                      className="inline-flex items-center rounded-full border border-purple-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-purple-700 hover:bg-purple-50"
+                      className="inline-flex w-full items-center justify-center rounded-full border border-purple-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-purple-700 hover:bg-purple-50 sm:w-auto"
                     >
                       Full history
                     </button>

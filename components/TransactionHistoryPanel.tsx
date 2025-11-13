@@ -136,7 +136,7 @@ const TransactionHistoryPanel: React.FC<TransactionHistoryPanelProps> = ({
   }, [transactions, variant, limit]);
 
   const renderActionRow = () => (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
       <button
         type="button"
         onClick={() => void loadTransactions()}
@@ -288,15 +288,15 @@ const TransactionHistoryPanel: React.FC<TransactionHistoryPanelProps> = ({
       <div className="space-y-4">
         {compactTransactions.map((txn) => (
           <div key={txn.id} className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">{txn.label}</p>
-                {txn.eventTitle && <p className="text-xs text-slate-500">{txn.eventTitle}</p>}
-                <p className="text-[11px] font-mono text-slate-400 mt-1">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900 break-words">{txn.label}</p>
+                {txn.eventTitle && <p className="text-xs text-slate-500 break-words">{txn.eventTitle}</p>}
+                <p className="mt-1 text-[11px] font-mono text-slate-400 break-all">
                   Ref: {txn.reference ?? '—'}
                 </p>
               </div>
-              <div className="text-right">
+              <div className="w-full text-left sm:w-auto sm:text-right">
                 <p className="text-lg font-bold text-slate-900">
                   {formatAmount(txn.amount, txn.currency)}
                 </p>
@@ -309,9 +309,11 @@ const TransactionHistoryPanel: React.FC<TransactionHistoryPanelProps> = ({
                 </span>
               </div>
             </div>
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-              <span>Updated {new Date(txn.updatedAt).toLocaleString()}</span>
-              <div className="flex items-center gap-2">
+            <div className="mt-3 flex flex-col gap-2 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-left leading-relaxed">
+                Updated {new Date(txn.updatedAt).toLocaleString()}
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
                 {txn.ticketId && <span className="font-semibold text-slate-600">#{txn.ticketId}</span>}
                 <button
                   type="button"
@@ -321,7 +323,7 @@ const TransactionHistoryPanel: React.FC<TransactionHistoryPanelProps> = ({
                     verifyingReference === txn.reference ||
                     txn.status === 'succeeded'
                   }
-                  className="inline-flex items-center rounded-full border border-purple-200 px-3 py-1 text-[11px] font-semibold text-purple-600 hover:bg-purple-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex w-full items-center justify-center rounded-full border border-purple-200 px-3 py-1 text-[11px] font-semibold text-purple-600 hover:bg-purple-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                 >
                   {verifyingReference === txn.reference ? 'Verifying…' : 'Sync'}
                 </button>
@@ -335,7 +337,7 @@ const TransactionHistoryPanel: React.FC<TransactionHistoryPanelProps> = ({
 
   return (
     <div className={`space-y-6 ${className ?? ''}`}>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-slate-200 bg-white/60 p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
             Total Spent
