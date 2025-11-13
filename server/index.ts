@@ -82,7 +82,8 @@ const connectSources = [
 const cspHeader =
   "default-src 'self'; " +
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' translate.googleapis.com translate.google.com www.google.com www.gstatic.com chrome-extension://bfdogplmndidlpjfhoijckpakkdjkkil/ https://pay.lenco.co https://accounts.google.com/gsi/client https://embed.tawk.to https://tawk.to https://va.tawk.to https://*.tawk.to; " +
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; " +
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://accounts.google.com/gsi/style; " +
+  "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://accounts.google.com/gsi/style; " +
   "font-src 'self' https://fonts.gstatic.com; " +
   "img-src 'self' data: https:; " +
   `connect-src ${connectSources}; ` +
