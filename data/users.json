@@ -97,6 +97,62 @@
       "authProviders": [
         "local"
       ]
+    },
+    {
+      "id": "b5f50343-65b5-4c78-8c96-91dbd631e931",
+      "name": "Yorum Kanema",
+      "email": "yorumkanema@gmail.com",
+      "passwordHash": "$2a$10$FZs/eCPV/wSYrRzjpHUax.vy.HxlK/xi1Bb4CqZ0/XlmXnTkG3By2",
+      "role": "manager",
+      "status": "active",
+      "interests": [],
+      "attendedEvents": [],
+      "subscriptionTier": "Regular",
+      "authProviders": [
+        "local"
+      ]
+    },
+    {
+      "id": "d6d4ef46-9f3f-4975-b034-cae56ac10b49",
+      "name": "Yorum Kanema",
+      "email": "yorumkanema@googlemail.com",
+      "passwordHash": "$2a$10$Gi4mobx9XJwTkbtY7UlgbOReRNFjQry27Z.fyfcdxnJp60Hxioefq",
+      "role": "attendee",
+      "status": "active",
+      "interests": [],
+      "attendedEvents": [],
+      "subscriptionTier": "Regular",
+      "authProviders": [
+        "local"
+      ]
+    },
+    {
+      "id": "eba3920a-a915-416d-991d-e246e12ce513",
+      "name": "Baulen Ziwa",
+      "email": "baulziwa@yahoo.com",
+      "passwordHash": "$2a$10$DiLAIjAuXzxxt1ZZeZkE6uXuFLfloGzD/dHFP4skfrdo1CvOxxaq2",
+      "role": "attendee",
+      "status": "active",
+      "interests": [],
+      "attendedEvents": [],
+      "subscriptionTier": "Regular",
+      "authProviders": [
+        "local"
+      ]
+    },
+    {
+      "id": "7fda7560-c439-43ce-b236-4b3b6190bd8c",
+      "name": "Alex Chimbila",
+      "email": "alexchimbila@gmail.com",
+      "passwordHash": "$2a$10$.TlOxfr3dZ/n3KBKNG318OuSPDyIjLv4Gm.q9MPH9IW0EWmaO5Xjq",
+      "role": "manager",
+      "status": "active",
+      "interests": [],
+      "attendedEvents": [],
+      "subscriptionTier": "Regular",
+      "authProviders": [
+        "local"
+      ]
     }
   ]
 }
