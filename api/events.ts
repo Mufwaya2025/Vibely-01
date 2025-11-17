@@ -1,23 +1,40 @@
 import { db } from './db';
-import { Event } from '../types';
+import { Event, User } from '../types';
 
 /**
  * Handles fetching all events.
  * It also calculates and injects the 'ticketsSold' count for each event.
  * @returns {Response} A list of all events with their sales count.
  */
-export async function handleGetAllEvents() {
+export async function handleGetAllEvents(req?: { user: User | null }) {
     await new Promise(resolve => setTimeout(resolve, 300));
     
     const allEvents = db.events.findAll();
     const allTickets = db.tickets.findAll();
+    const requestingUser = req?.user ?? null;
 
     const eventsWithCounts = allEvents.map(event => {
         const ticketsSold = allTickets.filter(t => t.eventId === event.id).length;
         return { ...event, ticketsSold };
     });
 
-    return new Response(JSON.stringify(eventsWithCounts), {
+    let visibleEvents = eventsWithCounts.filter(
+      (event) => (event.status ?? 'published') === 'published'
+    );
+
+    if (requestingUser?.role === 'admin') {
+      visibleEvents = eventsWithCounts;
+    } else if (requestingUser?.role === 'manager') {
+      const ownEvents = eventsWithCounts.filter(
+        (event) => event.organizer.id === requestingUser.id
+      );
+      const merged = new Map<string, Event>();
+      visibleEvents.forEach((event) => merged.set(event.id, event));
+      ownEvents.forEach((event) => merged.set(event.id, event));
+      visibleEvents = Array.from(merged.values());
+    }
+
+    return new Response(JSON.stringify(visibleEvents), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
     });
@@ -48,7 +65,11 @@ export async function handleCreateEvent(req: { body: { eventData: Omit<Event, 'i
     
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    const newEventData = { ...eventData, organizer };
+    const newEventData = {
+      ...eventData,
+      organizer,
+      status: 'pending_approval' as const,
+    };
     const newEvent = db.events.create(newEventData);
 
     // Return the event with ticketsSold initialized
@@ -81,10 +102,24 @@ export async function handleUpdateEvent(req: { body: { eventData: Event, userId:
     await new Promise(resolve => setTimeout(resolve, 500));
     
     // Update the event with new data while preserving original organizer
-    const updatedEvent = db.events.update(eventData.id, {
-        ...eventData,
-        organizer: existingEvent.organizer // Preserve original organizer
-    });
+    const updatedFields: Partial<Event> = {
+      title: eventData.title,
+      description: eventData.description,
+      date: eventData.date,
+      location: eventData.location,
+      latitude: eventData.latitude,
+      longitude: eventData.longitude,
+      price: eventData.price,
+      category: eventData.category,
+      imageUrl: eventData.imageUrl,
+      ticketQuantity: eventData.ticketQuantity,
+    };
+
+    if (eventData.ticketTiers) {
+      updatedFields.ticketTiers = eventData.ticketTiers;
+    }
+
+    const updatedEvent = db.events.update(eventData.id, updatedFields);
 
     return new Response(JSON.stringify(updatedEvent), {
         status: 200,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AdminStats, Event, User, SubscriptionTier } from '../types';
+import { AdminStats, Event, OrganizerKycProfile, User, SubscriptionTier } from '../types';
 import UsersIcon from './icons/UsersIcon';
 import ListIcon from './icons/ListIcon';
 import TicketIcon from './icons/TicketIcon';
@@ -12,6 +12,7 @@ import AdminSettingsPanel from './admin/settings/AdminSettingsPanel';
 import OperationalMetricsPanel from './admin/operations/OperationalMetricsPanel';
 import ChartBarIcon from './icons/ChartBarIcon';
 import SubscriptionManager from './SubscriptionManager';
+import KycReviewPanel from './admin/KycReviewPanel';
 
 interface AdminDashboardProps {
   user: User;
@@ -22,9 +23,12 @@ interface AdminDashboardProps {
   updatingEventId: string | null;
   onRefresh: () => void;
   onLogout: () => void;
-  onUpdateEventStatus: (eventId: string, status: string) => void;
+  onUpdateEventStatus: (eventId: string, status: string, note?: string) => Promise<void> | void;
   onToggleEventFeatured: (eventId: string, isFeatured: boolean) => void;
   onNavigateHome?: () => void;
+  kycProfiles: OrganizerKycProfile[];
+  onRefreshKyc: () => void;
+  onUpdateKycStatus: (organizerId: string, status: OrganizerKycProfile['status'], note?: string) => Promise<void> | void;
 }
 
 const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: string; accent: string }> = ({
@@ -46,6 +50,34 @@ const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: string; 
   </div>
 );
 
+const formatEventStatusLabel = (status: Event['status']) => {
+  if (!status) return 'Published';
+  return status
+    .split('_')
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+};
+
+const getEventStatusBadgeClass = (status: Event['status']) => {
+  switch (status) {
+    case 'published':
+      return 'bg-green-100 text-green-700';
+    case 'pending_approval':
+    case 'draft':
+      return 'bg-yellow-100 text-yellow-700';
+    case 'rejected':
+      return 'bg-red-100 text-red-700';
+    case 'suspended':
+      return 'bg-slate-200 text-slate-700';
+    case 'flagged':
+      return 'bg-orange-100 text-orange-700';
+    case 'archived':
+      return 'bg-slate-300 text-slate-700';
+    default:
+      return 'bg-slate-100 text-slate-700';
+  }
+};
+
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
   user,
   stats,
@@ -58,10 +90,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUpdateEventStatus,
   onToggleEventFeatured,
   onNavigateHome,
+  kycProfiles,
+  onRefreshKyc,
+  onUpdateKycStatus,
 }) => {
-  const [activeSection, setActiveSection] = useState<'overview' | 'payments' | 'operations' | 'users' | 'communications' | 'settings' | 'subscriptions'>('overview');
+  const [activeSection, setActiveSection] = useState<
+    'overview' | 'payments' | 'operations' | 'users' | 'communications' | 'settings' | 'subscriptions' | 'kyc'
+  >('overview');
+  const [moderationNotes, setModerationNotes] = useState<Record<string, string>>({});
   const navigationItems: {
-    key: 'overview' | 'payments' | 'operations' | 'users' | 'communications' | 'settings' | 'subscriptions';
+    key: 'overview' | 'payments' | 'operations' | 'users' | 'communications' | 'settings' | 'subscriptions' | 'kyc';
     label: string;
     description: string;
   }[] = [
@@ -72,6 +110,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     { key: 'users', label: 'Users', description: 'Roles & access control' },
     { key: 'communications', label: 'Communications', description: 'Messaging & notifications' },
     { key: 'subscriptions', label: 'Subscriptions', description: 'Manage tiers & pricing' },
+    { key: 'kyc', label: 'KYC', description: 'Organizer verification' },
   ];
   const firstName = user.name.split(' ')[0] ?? user.name;
   const formatZMW = (value: number) =>
@@ -80,6 +119,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const revenueHighlight = stats ? formatZMW(stats.totalRevenue) : '\u2014';
   const avgTicket = stats ? formatZMW(stats.averageTicketPrice) : '\u2014';
   const activeEventsRatio = stats ? `${stats.upcomingEvents}/${stats.totalEvents}` : '0/0';
+  const getNoteValue = (eventId: string) => moderationNotes[eventId] ?? '';
+  const handleNoteChange = (eventId: string, value: string) => {
+    setModerationNotes((prev) => {
+      if (!value.trim()) {
+        if (!(eventId in prev)) return prev;
+        const { [eventId]: _removed, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [eventId]: value };
+    });
+  };
+  const handleStatusChange = async (
+    eventId: string,
+    status: Event['status'],
+    requireNote?: boolean
+  ) => {
+    const trimmedNote = (moderationNotes[eventId] ?? '').trim();
+    if (requireNote && !trimmedNote) {
+      return;
+    }
+    await onUpdateEventStatus(eventId, status, trimmedNote || undefined);
+    if (!requireNote || trimmedNote) {
+      setModerationNotes((prev) => {
+        if (!(eventId in prev)) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next[eventId];
+        return next;
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 pb-16 text-slate-900">
@@ -216,6 +287,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   user={user}
                 />
               </div>
+            ) : activeSection === 'kyc' ? (
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md">
+                <KycReviewPanel
+                  profiles={kycProfiles}
+                  isLoading={isLoading}
+                  onRefresh={onRefreshKyc}
+                  onUpdateStatus={onUpdateKycStatus}
+                />
+              </div>
             ) : isLoading ? (
               <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center text-slate-600 shadow-md">
                 Loading platform insights...
@@ -318,14 +398,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </tr>
                       ) : (
                         events.map((evt) => {
-                          const statusColor =
-                            evt.status === 'published'
-                              ? 'bg-green-100 text-green-700'
-                              : evt.status === 'flagged'
-                              ? 'bg-red-100 text-red-700'
-                              : evt.status === 'draft'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-slate-100 text-slate-700';
+                          const statusClass = getEventStatusBadgeClass(evt.status);
+                          const statusLabel = formatEventStatusLabel(evt.status);
+                          const eventStatus = evt.status ?? 'published';
+                          const isUpdating = updatingEventId === evt.id;
+                          const noteValue = getNoteValue(evt.id);
+                          const trimmedNote = noteValue.trim();
 
                           return (
                             <tr key={evt.id} className="hover:bg-slate-50">
@@ -340,8 +418,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 <p className="text-xs text-slate-400">Organizer: {evt.organizer.name}</p>
                               </td>
                               <td className="px-4 py-3">
-                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
-                                  {evt.status ?? 'published'}
+                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusClass}`}>
+                                  {statusLabel}
                                 </span>
                               </td>
                               <td className="px-4 py-3">
@@ -357,53 +435,102 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 {(evt.ticketsSold ?? 0).toLocaleString()}/{evt.ticketQuantity.toLocaleString()}
                               </td>
                               <td className="px-4 py-3">
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-col gap-3">
+                                  <div>
+                                    <label className="text-xs font-semibold text-slate-600">
+                                      Moderator note
+                                    </label>
+                                    <textarea
+                                      value={noteValue}
+                                      onChange={(event) =>
+                                        handleNoteChange(evt.id, event.target.value)
+                                      }
+                                      placeholder="Share a short reason for this decision"
+                                      rows={2}
+                                      className="mt-1 w-full rounded-md border border-slate-200 px-2 py-1 text-sm text-slate-700 shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                    />
+                                    <p className="mt-1 text-[11px] text-slate-500">
+                                      Sent to the organizer when requesting changes, rejecting, or
+                                      suspending an event.
+                                    </p>
+                                  </div>
+                                  <div className="flex flex-wrap gap-2">
+                                    <button
+                                      type="button"
+                                      disabled={eventStatus === 'published' || isUpdating}
+                                      onClick={() => void handleStatusChange(evt.id, 'published')}
+                                      className="px-3 py-1.5 text-xs font-semibold rounded-md bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={
+                                        eventStatus === 'pending_approval' ||
+                                        eventStatus === 'draft' ||
+                                        isUpdating ||
+                                        !trimmedNote
+                                      }
+                                      onClick={() =>
+                                        void handleStatusChange(evt.id, 'pending_approval', true)
+                                      }
+                                      className="px-3 py-1.5 text-xs font-semibold rounded-md bg-yellow-100 text-yellow-700 hover:bg-yellow-200 disabled:opacity-50"
+                                    >
+                                      Request Changes
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={eventStatus === 'rejected' || isUpdating || !trimmedNote}
+                                      onClick={() =>
+                                        void handleStatusChange(evt.id, 'rejected', true)
+                                      }
+                                      className="px-3 py-1.5 text-xs font-semibold rounded-md bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                                    >
+                                      Reject
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={
+                                        eventStatus === 'suspended' || isUpdating || !trimmedNote
+                                      }
+                                      onClick={() =>
+                                        void handleStatusChange(evt.id, 'suspended', true)
+                                      }
+                                      className="px-3 py-1.5 text-xs font-semibold rounded-md bg-slate-200 text-slate-700 hover:bg-slate-300 disabled:opacity-50"
+                                    >
+                                      Suspend
+                                    </button>
                                   <button
                                     type="button"
-                                    disabled={evt.status === 'published' || updatingEventId === evt.id}
-                                    onClick={() => onUpdateEventStatus(evt.id, 'published')}
-                                    className="px-3 py-1.5 text-xs font-semibold rounded-md bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50"
+                                    disabled={eventStatus === 'archived' || isUpdating}
+                                    onClick={() => void handleStatusChange(evt.id, 'archived')}
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-md bg-slate-200 text-slate-700 hover:bg-slate-300 disabled:opacity-50"
                                   >
-                                    Publish
+                                    Archive
                                   </button>
                                   <button
                                     type="button"
-                                    disabled={evt.status === 'draft' || updatingEventId === evt.id}
-                                    onClick={() => onUpdateEventStatus(evt.id, 'draft')}
-                                    className="px-3 py-1.5 text-xs font-semibold rounded-md bg-yellow-100 text-yellow-700 hover:bg-yellow-200 disabled:opacity-50"
+                                    disabled={isUpdating}
+                                    onClick={() => onToggleEventFeatured(evt.id, !evt.isFeatured)}
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-md ${
+                                      evt.isFeatured
+                                        ? 'bg-purple-600 text-white hover:bg-purple-700'
+                                        : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                                    }`}
                                   >
-                                    Mark Draft
+                                    {evt.isFeatured ? 'Unfeature' : 'Feature'}
                                   </button>
-                                <button
-                                  type="button"
-                                  disabled={evt.status === 'archived' || updatingEventId === evt.id}
-                                  onClick={() => onUpdateEventStatus(evt.id, 'archived')}
-                                  className="px-3 py-1.5 text-xs font-semibold rounded-md bg-slate-200 text-slate-700 hover:bg-slate-300 disabled:opacity-50"
-                                >
-                                  Archive
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={updatingEventId === evt.id}
-                                  onClick={() => onToggleEventFeatured(evt.id, !evt.isFeatured)}
-                                  className={`px-3 py-1.5 text-xs font-semibold rounded-md ${
-                                    evt.isFeatured
-                                      ? 'bg-purple-600 text-white hover:bg-purple-700'
-                                      : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                                  }`}
-                                >
-                                  {evt.isFeatured ? 'Unfeature' : 'Feature'}
-                                </button>
-                                {evt.status === 'flagged' && (
-                                  <button
-                                    type="button"
-                                    disabled={updatingEventId === evt.id}
-                                    onClick={() => onUpdateEventStatus(evt.id, 'published')}
+                                  {evt.status === 'flagged' && (
+                                    <button
+                                      type="button"
+                                      disabled={updatingEventId === evt.id}
+                                      onClick={() => void handleStatusChange(evt.id, 'published')}
                                       className="px-3 py-1.5 text-xs font-semibold rounded-md bg-purple-100 text-purple-700 hover:bg-purple-200 disabled:opacity-50"
                                     >
                                       Resolve Flags
                                     </button>
                                   )}
+                                  </div>
                                 </div>
                               </td>
                             </tr>

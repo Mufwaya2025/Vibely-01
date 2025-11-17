@@ -43,6 +43,14 @@ import {
   handleUpdateEventFeatured,
 } from '../../api/admin';
 import {
+  handleGetOrganizerKycProfile,
+  handleRequestOrganizerKycEmailOtp,
+  handleSubmitOrganizerKycProfile,
+  handleVerifyOrganizerKycEmailOtp,
+  handleAdminListOrganizerKycProfiles,
+  handleAdminUpdateOrganizerKycStatus,
+} from '../../api/kyc';
+import {
   handleAdminGetPaymentConfig,
   handleAdminUpsertPaymentConfig,
   handleAdminTestPaymentConfig,
@@ -230,6 +238,24 @@ export const registerRoutes = (app: Express) => {
   router.post('/admin/subscriptions/tiers', createHandler(handleCreateSubscriptionTier));
   router.put('/admin/subscriptions/tiers', createHandler(handleUpdateSubscriptionTier));
   router.delete('/admin/subscriptions/tiers', createHandler(handleDeleteSubscriptionTier));
+
+  // Admin KYC
+  router.get('/admin/kyc/organizers', createHandler(handleAdminListOrganizerKycProfiles));
+  router.post(
+    '/admin/kyc/organizers/:id/status',
+    createHandler((req) =>
+      handleAdminUpdateOrganizerKycStatus({
+        ...req,
+        params: { id: req.params?.id },
+      })
+    )
+  );
+
+  // KYC
+  router.get('/kyc/organizer/profile', createHandler(handleGetOrganizerKycProfile));
+  router.post('/kyc/organizer/profile', createHandler(handleSubmitOrganizerKycProfile));
+  router.post('/kyc/organizer/email-otp/request', createHandler(handleRequestOrganizerKycEmailOtp));
+  router.post('/kyc/organizer/email-otp/verify', createHandler(handleVerifyOrganizerKycEmailOtp));
 
   app.use('/api', router);
 };

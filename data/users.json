@@ -153,6 +153,34 @@
       "authProviders": [
         "local"
       ]
+    },
+    {
+      "id": "b7648e44-27f5-408d-96d8-8181390df681",
+      "name": "Phillip Chishimba",
+      "email": "phillip@yahoo.com",
+      "passwordHash": "$2a$10$gQViKsNg8E0GwdryW3iuD.ieibVtycmuIkRRCR0KI3DytT0sh5sXq",
+      "role": "attendee",
+      "status": "active",
+      "interests": [],
+      "attendedEvents": [],
+      "subscriptionTier": "Regular",
+      "authProviders": [
+        "local"
+      ]
+    },
+    {
+      "id": "255b8b25-2add-4fa0-ae8c-b2d2934b1aea",
+      "name": "Phillip Chishimba",
+      "email": "phillip@yahoo-01.com",
+      "passwordHash": "$2a$10$b0OQkZwI3VFXjGrQ4/qtR.X5MlQzPQcfcp7Ux0hpB1wZWxyATB93e",
+      "role": "manager",
+      "status": "active",
+      "interests": [],
+      "attendedEvents": [],
+      "subscriptionTier": "Regular",
+      "authProviders": [
+        "local"
+      ]
     }
   ]
 }

@@ -1,5 +1,12 @@
 export type EventCategory = 'Music' | 'Art' | 'Food' | 'Tech' | 'Sports' | 'Community';
-export type EventStatus = 'draft' | 'published' | 'archived' | 'flagged';
+export type EventStatus =
+  | 'draft'
+  | 'pending_approval'
+  | 'published'
+  | 'suspended'
+  | 'rejected'
+  | 'archived'
+  | 'flagged';
 export type UserRole = 'attendee' | 'manager' | 'admin';
 export type UserStatus = 'active' | 'suspended' | 'onboarding';
 export type AuthProvider = 'local' | 'google';
@@ -16,6 +23,15 @@ export type NotificationStatus = 'queued' | 'sent' | 'failed';
 export type RefundStatus = 'open' | 'in_review' | 'resolved' | 'escalated';
 export type ApiKeyStatus = 'active' | 'revoked';
 export type DataExportStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type OrganizerType = 'individual' | 'company';
+export type OrganizerPayoutMethod = 'bank' | 'mobile_money';
+export type KycStatus =
+  | 'not_started'
+  | 'draft'
+  | 'pending_review'
+  | 'verified'
+  | 'limited'
+  | 'rejected';
 
 export interface PayoutFeeTier {
   minAmount: number;
@@ -103,6 +119,86 @@ export interface StaffUser {
   active: boolean;
   createdAt: string;
 }
+
+export interface OrganizerKycContacts {
+  legalName: string;
+  tradingName?: string;
+  email: string;
+  phone: string;
+  nationalityOrRegistrationCountry: string;
+  physicalAddress: string;
+  eventCategory: string;
+  attendanceRange: string;
+  ticketPriceRange: string;
+  revenueRange: string;
+}
+
+export interface OrganizerPayoutDetails {
+  method: OrganizerPayoutMethod;
+  bankName?: string;
+  branch?: string;
+  accountName?: string;
+  accountNumber?: string;
+  confirmationLetter?: string;
+  walletProvider?: string;
+  walletNumber?: string;
+  walletHolder?: string;
+}
+
+export interface OrganizerIndividualDocuments {
+  idType?: 'nrc' | 'passport';
+  idNumber?: string;
+  idFront?: string;
+  idBack?: string;
+  selfieWithId?: string;
+  proofOfAddress?: string;
+}
+
+export interface OrganizerCompanyDocuments {
+  pacraCertificate?: string;
+  incorporationCertificate?: string;
+  tpinCertificate?: string;
+  authorisedRepId?: string;
+  authorisationLetter?: string;
+  proofOfAddress?: string;
+}
+
+export interface OrganizerEventDocumentation {
+  eventDescription: string;
+  eventPoster?: string;
+  venueName?: string;
+  venueLocation?: string;
+  venueBookingConfirmation?: string;
+  hostLetter?: string;
+  policePermit?: string;
+  securityPlan?: string;
+  emergencyPlan?: string;
+}
+
+export interface OrganizerKycProfile {
+  organizerId: string;
+  organizerType: OrganizerType;
+  status: KycStatus;
+  contacts: OrganizerKycContacts;
+  payoutDetails: OrganizerPayoutDetails;
+  individualDocs?: OrganizerIndividualDocuments;
+  companyDocs?: OrganizerCompanyDocuments;
+  eventDocumentation: OrganizerEventDocumentation;
+  verification: {
+    emailVerified: boolean;
+    verifiedAt?: string;
+    lastOtpSentAt?: string;
+  };
+  submittedAt?: string;
+  reviewedAt?: string;
+  reviewerNotes?: string;
+}
+
+export interface OrganizerKycRequestPayload
+  extends Omit<
+    OrganizerKycProfile,
+    'organizerId' | 'status' | 'verification' | 'submittedAt' | 'reviewedAt' | 'reviewerNotes'
+  > {}
 
 export interface Event {
   id: string;

@@ -1,10 +1,34 @@
 import { db } from './db';
 import { EventCategory, EventStatus, User } from '../types';
 import { requireAdmin } from './utils/auth';
+import { messageStore } from '../server/messaging/messageStore';
 
 interface AdminRequest {
   user: User | null;
 }
+
+const formatStatusDecisionMessage = (
+  status: EventStatus,
+  eventTitle: string,
+  actorName: string,
+  note?: string
+): string | null => {
+  const baseMessages: Partial<Record<EventStatus, string>> = {
+    published: `Your event "${eventTitle}" has been approved by ${actorName} and is now live on Vibely.`,
+    pending_approval: `Your event "${eventTitle}" was moved back to pending review for additional checks.`,
+    rejected: `Your event "${eventTitle}" was rejected during moderation.`,
+    suspended: `Your event "${eventTitle}" has been suspended and is currently hidden from attendees.`,
+    archived: `Your event "${eventTitle}" has been archived by ${actorName}.`,
+  };
+
+  const fallback = `The status of your event "${eventTitle}" was updated to ${status} by ${actorName}.`;
+  const decision = baseMessages[status] ?? fallback;
+  const trimmedNote = note?.trim();
+  if (trimmedNote) {
+    return `${decision} Reason: ${trimmedNote}`;
+  }
+  return decision;
+};
 
 export async function handleGetPlatformStats(req: AdminRequest) {
   const auth = requireAdmin(req.user);
@@ -102,12 +126,12 @@ export async function handleGetAllEventsForAdmin(req: AdminRequest) {
 
 export async function handleUpdateEventStatus(req: {
   user: User | null;
-  body: { eventId: string; status: EventStatus };
+  body: { eventId: string; status: EventStatus; note?: string };
 }) {
   const auth = requireAdmin(req.user);
   if (auth) return auth;
 
-  const { eventId, status } = req.body;
+  const { eventId, status, note } = req.body;
   if (!eventId || !status) {
     return new Response(JSON.stringify({ message: 'Invalid request' }), {
       status: 400,
@@ -121,6 +145,23 @@ export async function handleUpdateEventStatus(req: {
       status: 404,
       headers: { 'Content-Type': 'application/json' },
     });
+  }
+
+  if (req.user && updated.organizer.id !== req.user.id) {
+    const message = formatStatusDecisionMessage(
+      status,
+      updated.title,
+      req.user.name,
+      note
+    );
+    if (message) {
+      messageStore.addMessage({
+        senderId: req.user.id,
+        senderName: req.user.name,
+        receiverId: updated.organizer.id,
+        content: message,
+      });
+    }
   }
 
   return new Response(JSON.stringify(updated), {

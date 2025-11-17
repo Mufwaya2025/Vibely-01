@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Event, User, Ticket, PaymentDetails, AdminStats } from './types';
+import { Event, User, Ticket, PaymentDetails, AdminStats, OrganizerKycProfile } from './types';
 import { getAllEvents, createEvent } from './services/eventService';
 import { getTicketsForUser, createTicket, submitReview } from './services/ticketService';
 import { savePaymentDetails, attachTicketToTransaction } from './services/paymentService';
@@ -26,7 +26,14 @@ import Footer from './components/Footer';
 import OrganizerTiers from './components/OrganizerTiers';
 import SubscriptionModal from './components/SubscriptionModal';
 import Messaging from './components/Messaging';
-import { getPlatformStats, getAdminEvents, updateEventStatus, updateEventFeatured } from './services/adminService';
+import {
+  getPlatformStats,
+  getAdminEvents,
+  updateEventStatus,
+  updateEventFeatured,
+  getOrganizerKycProfiles,
+  updateOrganizerKycStatus,
+} from './services/adminService';
 import { loadStoredUser, storeUserSession, clearStoredSession } from './services/sessionService';
 
 const App: React.FC = () => {
@@ -60,13 +67,14 @@ const App: React.FC = () => {
   const [isAdminLoading, setIsAdminLoading] = useState(false);
   const [adminEvents, setAdminEvents] = useState<Event[]>([]);
   const [updatingEventId, setUpdatingEventId] = useState<string | null>(null);
+  const [adminKycProfiles, setAdminKycProfiles] = useState<OrganizerKycProfile[]>([]);
 
   // Fetch initial data
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         setIsLoading(true);
-        const fetchedEvents = await getAllEvents();
+        const fetchedEvents = await getAllEvents(user);
         setEvents(fetchedEvents);
         setFavoriteEventIds(getFavoriteEvents());
       } catch (err) {
@@ -77,20 +85,21 @@ const App: React.FC = () => {
       }
     };
     fetchInitialData();
-    
-    // Fetch location separately and non-blocking to prevent hanging the app
+  }, [user]);
+
+  // Fetch location separately and non-blocking to prevent hanging the app
+  useEffect(() => {
     const fetchLocation = async () => {
       try {
         const location = await getCurrentLocation();
         setUserLocation(location);
       } catch (err) {
-        console.error("Failed to get current location:", err);
-        // Don't set an error state for location issues, just try to use stored location
+        console.error('Failed to get current location:', err);
         const storedLocation = loadLocationFromStorage();
         if (storedLocation) {
           setUserLocation(storedLocation);
         } else {
-          setUserLocation({ lat: -15.4167, lon: 28.2833 }); // Lusaka coordinates as fallback
+          setUserLocation({ lat: -15.4167, lon: 28.2833 });
         }
       }
     };
@@ -139,6 +148,8 @@ const App: React.FC = () => {
       fetchAdminStats();
     } else {
       setAdminStats(null);
+      setAdminEvents([]);
+      setAdminKycProfiles([]);
     }
   }, [user]);
 
@@ -201,7 +212,7 @@ const App: React.FC = () => {
     // Refetch events to update any data related to the user's new subscription tier
     try {
       setIsLoading(true);
-      const fetchedEvents = await getAllEvents();
+      const fetchedEvents = await getAllEvents(updatedUser);
       setEvents(fetchedEvents);
     } catch (err) {
       setError('Failed to refresh events after subscription upgrade.');
@@ -289,7 +300,10 @@ const App: React.FC = () => {
       if(!user) throw new Error("User not logged in");
       const newEvent = await createEvent(eventData, {id: user.id, name: user.name});
       setEvents(prev => [...prev, newEvent]);
-      setToast({ message: `Event "${newEvent.title}" created successfully!`, type: 'success' });
+      setToast({
+        message: `Event "${newEvent.title}" submitted for admin approval.`,
+        type: 'success',
+      });
       if (user.role === 'admin') {
         fetchAdminStats();
       }
@@ -323,10 +337,10 @@ const App: React.FC = () => {
     );
   };
 
-  const handleAdminUpdateEventStatus = async (eventId: string, status: string) => {
+  const handleAdminUpdateEventStatus = async (eventId: string, status: string, note?: string) => {
     if (!user) return;
     setUpdatingEventId(eventId);
-    const updated = await updateEventStatus(user, eventId, status);
+    const updated = await updateEventStatus(user, eventId, status, note);
     if (updated) {
       setAdminEvents(prev =>
         prev.map(evt => (evt.id === eventId ? updated : evt))
@@ -341,15 +355,39 @@ const App: React.FC = () => {
     setUpdatingEventId(null);
   };
 
+  const handleAdminUpdateKycStatus = async (
+    organizerId: string,
+    status: OrganizerKycProfile['status'],
+    note?: string
+  ) => {
+    if (!user) return;
+    try {
+      const updated = await updateOrganizerKycStatus(user, organizerId, status, note);
+      setAdminKycProfiles((prev) => {
+        const exists = prev.some((p) => p.organizerId === organizerId);
+        if (exists) {
+          return prev.map((p) => (p.organizerId === organizerId ? updated : p));
+        }
+        return [updated, ...prev];
+      });
+      setToast({ message: `KYC status set to ${status}.`, type: 'success' });
+    } catch (err) {
+      console.error(err);
+      setToast({ message: 'Failed to update KYC status.', type: 'error' });
+    }
+  };
+
   const fetchAdminStats = async () => {
     if (!user) return;
     setIsAdminLoading(true);
-    const [stats, adminEventList] = await Promise.all([
+    const [stats, adminEventList, kycProfiles] = await Promise.all([
       getPlatformStats(user),
       getAdminEvents(user),
+      getOrganizerKycProfiles(user),
     ]);
     setAdminStats(stats);
     setAdminEvents(adminEventList);
+    setAdminKycProfiles(kycProfiles);
     setIsAdminLoading(false);
   };
 
@@ -413,6 +451,7 @@ const App: React.FC = () => {
     };
 
     return events
+      .filter((event) => (event.status ?? 'published') === 'published')
       .filter((event) => new Date(event.date) > new Date()) // only show future events
       .filter((event) => {
         const eventDate = new Date(event.date);
@@ -470,6 +509,9 @@ const App: React.FC = () => {
           onLogout={handleLogout}
           onUpdateEventStatus={handleAdminUpdateEventStatus}
           onToggleEventFeatured={handleAdminToggleEventFeatured}
+          kycProfiles={adminKycProfiles}
+          onRefreshKyc={fetchAdminStats}
+          onUpdateKycStatus={handleAdminUpdateKycStatus}
         />
       );
   }

@@ -15,6 +15,8 @@ import {
   User,
   UserRole,
   UserStatus,
+  OrganizerKycProfile,
+  KycStatus,
 } from '../types';
 import { apiFetch } from '../utils/apiClient';
 
@@ -61,14 +63,15 @@ export const getAdminEvents = async (user: User): Promise<Event[]> => {
 export const updateEventStatus = async (
   user: User,
   eventId: string,
-  status: string
+  status: string,
+  note?: string
 ): Promise<Event | null> => {
   try {
     return await parseJson<Event>(
       await apiFetch('/api/admin/events/status', {
         method: 'POST',
         user,
-        body: { eventId, status },
+        body: { eventId, status, note },
       }),
       'Failed to update event status'
     );
@@ -198,6 +201,27 @@ export const replayWebhook = async (user: User, id: string) =>
     }),
     'Failed to replay webhook.'
   );
+
+export const getOrganizerKycProfiles = async (user: User): Promise<OrganizerKycProfile[]> =>
+  parseJson(
+    await apiFetch('/api/admin/kyc/organizers', { user }),
+    'Failed to load organizer KYC profiles.'
+  ).then((res: { profiles: OrganizerKycProfile[] }) => res.profiles);
+
+export const updateOrganizerKycStatus = async (
+  user: User,
+  organizerId: string,
+  status: KycStatus,
+  reviewerNotes?: string
+): Promise<OrganizerKycProfile> =>
+  parseJson(
+    await apiFetch(`/api/admin/kyc/organizers/${organizerId}/status`, {
+      method: 'POST',
+      user,
+      body: { status, reviewerNotes },
+    }),
+    'Failed to update organizer KYC status.'
+  ).then((res: { profile: OrganizerKycProfile }) => res.profile);
 
 export const getPaymentSummary = async (user: User) =>
   parseJson(

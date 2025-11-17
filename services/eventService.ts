@@ -4,9 +4,9 @@ import { apiFetch, apiFetchJson } from '../utils/apiClient';
 /**
  * Fetches all events from the backend API.
  */
-export const getAllEvents = async (): Promise<Event[]> => {
+export const getAllEvents = async (user?: User | null): Promise<Event[]> => {
   try {
-    return await apiFetchJson<Event[]>('/api/events');
+    return await apiFetchJson<Event[]>('/api/events', user ? { user } : undefined);
   } catch (error) {
     console.error('Error fetching all events:', error);
     return [];

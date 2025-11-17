@@ -1,5 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { User, Event, SubscriptionTier } from '../types';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  User,
+  Event,
+  SubscriptionTier,
+  OrganizerKycProfile,
+  OrganizerKycRequestPayload,
+} from '../types';
 import { getSubscriptionTiers, cancelSubscription } from '../services/subscriptionService';
 import {
   fetchSubscriptionTransactions,
@@ -7,10 +13,112 @@ import {
   verifyPaymentReference,
   ProcessPaymentResult,
 } from '../services/paymentService';
+import {
+  getOrganizerKycProfile,
+  requestOrganizerEmailOtp,
+  submitOrganizerKycProfile,
+  verifyOrganizerEmailOtp,
+} from '../services/kycService';
 
 import CreateEventModal from './CreateEventModal';
 import EditEventModal from './EditEventModal';
 import ManageEventView from './ManageEventView';
+import OrganizerKycModal from './OrganizerKycModal';
+
+const formatEventStatusLabel = (status: Event['status']) => {
+  if (!status) return 'Published';
+  return status
+    .split('_')
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+};
+
+const getStatusBadgeClass = (status: Event['status']) => {
+  switch (status) {
+    case 'published':
+      return 'bg-emerald-100 text-emerald-700';
+    case 'pending_approval':
+    case 'draft':
+      return 'bg-amber-100 text-amber-700';
+    case 'rejected':
+      return 'bg-red-100 text-red-700';
+    case 'suspended':
+      return 'bg-slate-200 text-slate-700';
+    case 'archived':
+      return 'bg-slate-300 text-slate-700';
+    default:
+      return 'bg-slate-100 text-slate-700';
+  }
+};
+
+const getStatusHelperText = (status: Event['status']) => {
+  switch (status) {
+    case 'pending_approval':
+      return 'Awaiting admin approval before going live.';
+    case 'rejected':
+      return 'Rejected — review and update details before resubmitting.';
+    case 'suspended':
+      return 'Suspended by the admin team. Check your inbox for next steps.';
+    case 'draft':
+      return 'Draft — finish editing and request approval when ready.';
+    case 'archived':
+      return 'Archived — no longer available to attendees.';
+    default:
+      return null;
+  }
+};
+
+const getKycStatusLabel = (status: OrganizerKycProfile['status']) => {
+  switch (status) {
+    case 'verified':
+      return 'Verified';
+    case 'pending_review':
+      return 'Pending Review';
+    case 'limited':
+      return 'Limited';
+    case 'rejected':
+      return 'Rejected';
+    case 'draft':
+      return 'Draft';
+    case 'not_started':
+    default:
+      return 'Not Started';
+  }
+};
+
+const getKycStatusColor = (status: OrganizerKycProfile['status']) => {
+  switch (status) {
+    case 'verified':
+      return 'bg-emerald-100 text-emerald-700';
+    case 'pending_review':
+      return 'bg-amber-100 text-amber-700';
+    case 'limited':
+    case 'draft':
+      return 'bg-slate-200 text-slate-800';
+    case 'rejected':
+      return 'bg-red-100 text-red-700';
+    default:
+      return 'bg-slate-100 text-slate-700';
+  }
+};
+
+const getKycStatusDescription = (status: OrganizerKycProfile['status']) => {
+  switch (status) {
+    case 'verified':
+      return 'Your payouts and high-value events are fully enabled.';
+    case 'pending_review':
+      return 'Our compliance team is reviewing your submission.';
+    case 'limited':
+      return 'Some features remain limited until we receive the requested documents.';
+    case 'rejected':
+      return 'We need updated information before you can publish large events.';
+    case 'draft':
+    case 'not_started':
+    default:
+      return 'Complete organizer KYC to unlock higher payout limits and faster approvals.';
+  }
+};
+
 import AnalysisDashboard from './AnalysisDashboard';
 import RevenueDashboard from './RevenueDashboard';
 import SettingsDashboard from './SettingsDashboard';
@@ -80,6 +188,155 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
   const [activeConversation, setActiveConversation] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const defaultKycProfile: OrganizerKycProfile = {
+    organizerId: user.id,
+    organizerType: 'individual',
+    status: 'not_started',
+    contacts: {
+      legalName: user.name,
+      tradingName: '',
+      email: user.email,
+      phone: '',
+      nationalityOrRegistrationCountry: '',
+      physicalAddress: '',
+      eventCategory: '',
+      attendanceRange: '',
+      ticketPriceRange: '',
+      revenueRange: '',
+    },
+    payoutDetails: {
+      method: 'bank',
+      bankName: '',
+      branch: '',
+      accountName: '',
+      accountNumber: '',
+      confirmationLetter: '',
+    },
+    individualDocs: {
+      idType: 'nrc',
+      idNumber: '',
+      idFront: '',
+      idBack: '',
+      selfieWithId: '',
+      proofOfAddress: '',
+    },
+    eventDocumentation: {
+      eventDescription: '',
+      eventPoster: '',
+      venueName: '',
+      venueLocation: '',
+      venueBookingConfirmation: '',
+      hostLetter: '',
+      policePermit: '',
+      securityPlan: '',
+      emergencyPlan: '',
+    },
+    verification: {
+      emailVerified: false,
+    },
+  };
+
+  const [kycProfile, setKycProfile] = useState<OrganizerKycProfile>(defaultKycProfile);
+  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
+  const [isLoadingKyc, setIsLoadingKyc] = useState(false);
+  const [isSubmittingKyc, setIsSubmittingKyc] = useState(false);
+  const [isSendingKycOtp, setIsSendingKycOtp] = useState(false);
+  const [isVerifyingKycOtp, setIsVerifyingKycOtp] = useState(false);
+  const [kycBanner, setKycBanner] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+
+  const loadKycProfile = useCallback(async () => {
+    if (user.role !== 'manager') return;
+    setIsLoadingKyc(true);
+    try {
+      const profile = await getOrganizerKycProfile(user);
+      setKycProfile(profile);
+    } catch (err) {
+      console.error('Failed to load KYC profile', err);
+      setKycProfile(defaultKycProfile);
+      setKycBanner({
+        type: 'error',
+        message:
+          err instanceof Error ? err.message : 'Unable to load your organizer verification info.',
+      });
+    } finally {
+      setIsLoadingKyc(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user.role === 'manager') {
+      void loadKycProfile();
+    }
+  }, [user.id, user.role, loadKycProfile]);
+
+  const handleSubmitKycProfile = async (payload: OrganizerKycRequestPayload) => {
+    setIsSubmittingKyc(true);
+    setKycBanner(null);
+    try {
+      const profile = await submitOrganizerKycProfile(user, payload);
+      setKycProfile(profile);
+      setKycBanner({
+        type: 'success',
+        message: 'KYC details submitted. We will notify you once the review is complete.',
+      });
+      setIsKycModalOpen(false);
+    } catch (err) {
+      setKycBanner({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to submit KYC details.',
+      });
+      throw (err instanceof Error ? err : new Error('Failed to submit KYC details.'));
+    } finally {
+      setIsSubmittingKyc(false);
+    }
+  };
+
+  const handleRequestKycOtp = async (email?: string) => {
+    setIsSendingKycOtp(true);
+    setKycBanner(null);
+    try {
+      await requestOrganizerEmailOtp(user, email);
+      setKycBanner({
+        type: 'info',
+        message: 'Verification code sent to your email inbox. It expires in 10 minutes.',
+      });
+    } catch (err) {
+      setKycBanner({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Unable to send verification code.',
+      });
+      throw (err instanceof Error ? err : new Error('Unable to send verification code.'));
+    } finally {
+      setIsSendingKycOtp(false);
+    }
+  };
+
+  const handleVerifyKycOtp = async (code: string) => {
+    setIsVerifyingKycOtp(true);
+    setKycBanner(null);
+    try {
+      const result = await verifyOrganizerEmailOtp(user, code);
+      setKycProfile(result.profile);
+      setKycBanner({
+        type: 'success',
+        message: 'Your contact email has been verified.',
+      });
+    } catch (err) {
+      setKycBanner({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Invalid verification code.',
+      });
+      throw (err instanceof Error ? err : new Error('Invalid verification code.'));
+    } finally {
+      setIsVerifyingKycOtp(false);
+    }
+  };
+
+  const kycStatus = (kycProfile?.status ?? 'not_started') as OrganizerKycProfile['status'];
+  const kycStatusLabel = getKycStatusLabel(kycStatus);
+  const kycStatusColor = getKycStatusColor(kycStatus);
+  const kycStatusDescription = getKycStatusDescription(kycStatus);
+  const kycEmailVerified = kycProfile?.verification?.emailVerified ?? false;
 
   const loadSubscriptionTransactions = async (options?: { isCancelled?: () => boolean }) => {
     const isCancelled = options?.isCancelled ?? (() => false);
@@ -281,53 +538,68 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
       </div>
       {events.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map((event) => (
-            <div
-              key={event.id}
-              className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
-            >
-              <div className="relative">
-                <img src={event.imageUrl} alt={event.title} className="w-full h-40 object-cover" />
-                <div className="absolute top-2 right-2 flex space-x-1">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleShareEvent(event);
-                    }}
-                    className="bg-white rounded-full p-1.5 shadow-md hover:bg-gray-100 transition-colors"
-                    aria-label="Share event"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedEvent(event);
-                      setIsEditModalOpen(true);
-                    }}
-                    className="bg-white rounded-full p-1.5 shadow-md hover:bg-gray-100 transition-colors"
-                    aria-label="Edit event"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              <div 
-                onClick={() => onSelectEvent(event)}
-                className="p-4"
+          {events.map((event) => {
+            const statusHint = getStatusHelperText(event.status);
+            return (
+              <div
+                key={event.id}
+                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
               >
-                <h3 className="font-bold truncate">{event.title}</h3>
-                <p className="text-sm text-gray-500">{new Date(event.date).toLocaleDateString()}</p>
-                <div className="mt-2 text-xs font-semibold text-purple-700 bg-purple-100 px-2 py-1 rounded-full inline-block">
-                  {event.category}
+                <div className="relative">
+                  <img src={event.imageUrl} alt={event.title} className="w-full h-40 object-cover" />
+                  <div className="absolute top-2 right-2 flex space-x-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShareEvent(event);
+                      }}
+                      className="bg-white rounded-full p-1.5 shadow-md hover:bg-gray-100 transition-colors"
+                      aria-label="Share event"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedEvent(event);
+                        setIsEditModalOpen(true);
+                      }}
+                      className="bg-white rounded-full p-1.5 shadow-md hover:bg-gray-100 transition-colors"
+                      aria-label="Edit event"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div 
+                  onClick={() => onSelectEvent(event)}
+                  className="p-4"
+                >
+                  <h3 className="font-bold truncate">{event.title}</h3>
+                  <p className="text-sm text-gray-500">{new Date(event.date).toLocaleDateString()}</p>
+                  <div className="mt-2 text-xs font-semibold text-purple-700 bg-purple-100 px-2 py-1 rounded-full inline-block">
+                    {event.category}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2 items-center">
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClass(event.status)}`}
+                    >
+                      {formatEventStatusLabel(event.status)}
+                    </span>
+                  </div>
+                  {statusHint && (
+                    <p className="mt-2 text-xs text-gray-500">
+                      {statusHint}
+                    </p>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-16 border-2 border-dashed border-gray-300 rounded-lg">
@@ -650,8 +922,79 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="lg:flex lg:gap-6">
+    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      {user.role === 'manager' && (
+        <section className="mb-6 rounded-3xl border border-slate-200 bg-white/80 px-6 py-5 shadow-sm">
+          <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-3">
+              <div>
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-purple-400">
+                  Organizer KYC
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${kycStatusColor}`}
+                  >
+                    {kycStatusLabel}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+                      kycEmailVerified
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {kycEmailVerified ? 'Email verified via OTP' : 'Email verification required'}
+                  </span>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600">{kycStatusDescription}</p>
+              <p className="text-xs text-slate-500">
+                We only verify organizers through document references and email OTP. Bank statements or
+                attendee NRC uploads are not required.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 md:items-end">
+              {kycBanner && (
+                <div
+                  className={`rounded-xl border px-3 py-2 text-sm ${
+                    kycBanner.type === 'success'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                      : kycBanner.type === 'error'
+                      ? 'border-red-200 bg-red-50 text-red-700'
+                      : 'border-amber-200 bg-amber-50 text-amber-800'
+                  }`}
+                >
+                  {kycBanner.message}
+                </div>
+              )}
+              <div className="flex flex-col gap-2 md:items-end">
+                <button
+                  type="button"
+                  onClick={() => setIsKycModalOpen(true)}
+                  disabled={isLoadingKyc}
+                  className="inline-flex items-center justify-center rounded-full border border-purple-200 bg-purple-600 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:bg-purple-300"
+                >
+                  {isLoadingKyc
+                    ? 'Loading...'
+                    : kycStatus === 'verified'
+                    ? 'View submission'
+                    : 'Complete verification'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void loadKycProfile()}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+                  disabled={isLoadingKyc}
+                >
+                  Refresh status
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+      <div className="lg:flex lg:gap-6">
           <aside className="mb-8 w-full lg:mb-0 lg:w-56">
             <div className="sticky top-28 space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-md">
               <div>
@@ -681,6 +1024,20 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
           <main className="flex-1 space-y-6">{renderContent()}</main>
         </div>
       </div>
+
+      {isKycModalOpen && kycProfile && (
+        <OrganizerKycModal
+          user={user}
+          profile={kycProfile}
+          onClose={() => setIsKycModalOpen(false)}
+          onSubmit={handleSubmitKycProfile}
+          onRequestOtp={handleRequestKycOtp}
+          onVerifyOtp={handleVerifyKycOtp}
+          isSubmitting={isSubmittingKyc}
+          isRequestingOtp={isSendingKycOtp}
+          isVerifyingOtp={isVerifyingKycOtp}
+        />
+      )}
 
       {isCreateModalOpen && (
         <CreateEventModal

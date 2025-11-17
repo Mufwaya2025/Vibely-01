@@ -1321,6 +1321,32 @@
       "id": "txn_68ad1009-bb05-4714-9f1f-388a53e7a261",
       "createdAt": "2025-11-15T06:04:32.363Z",
       "updatedAt": "2025-11-15T06:04:32.363Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1763377603541-vafg8d",
+      "purpose": "ticket",
+      "eventId": "evt-3b325b99-32b0-49a8-bb30-b1b9f9b159bc",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "b5f50343-65b5-4c78-8c96-91dbd631e931",
+      "amount": 250,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Amapiano Festival",
+        "organizerId": "b5f50343-65b5-4c78-8c96-91dbd631e931",
+        "ticketTierId": "tier-1763038288533-ybok8",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Amapiano Festival (General Admission)"
+      },
+      "id": "txn_e1bb5338-3297-43c4-8970-493285e03c0f",
+      "createdAt": "2025-11-17T11:06:43.541Z",
+      "updatedAt": "2025-11-17T11:06:43.541Z"
     }
   ]
 }

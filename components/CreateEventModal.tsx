@@ -129,6 +129,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onClose, onCreateEv
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
+    let cancelled = false;
     const map = L.map(mapContainerRef.current, {
       zoomControl: true,
       attributionControl: true,
@@ -165,12 +166,14 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onClose, onCreateEv
     }, 200);
 
     getCurrentLocation().then((coords) => {
-      if (!coords) return;
-      map.setView([coords.lat, coords.lon], 13);
+      if (!coords || cancelled) return;
+      if (!mapRef.current) return;
+      mapRef.current.setView([coords.lat, coords.lon], 13);
       setSelectedPosition(coords);
     });
 
     return () => {
+      cancelled = true;
       map.off();
       map.remove();
       mapRef.current = null;
@@ -425,7 +428,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onClose, onCreateEv
       reviewCount: 0,
       averageRating: 0,
       ticketsSold: 0,
-      status: 'draft',
+      status: 'pending_approval',
       flagCount: 0,
       isFeatured: false,
     };

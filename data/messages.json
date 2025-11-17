@@ -44,6 +44,132 @@
       "senderName": "Mufwaya Kaungu",
       "receiverId": "b5f50343-65b5-4c78-8c96-91dbd631e931",
       "content": "Is this an actual actual event"
+    },
+    {
+      "id": "4473c34e-2785-4619-9b68-6e5f8baf6cea",
+      "timestamp": "2025-11-16T13:20:22.273Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "content": "Your event \"Test Event\" was moved back to pending review for additional checks."
+    },
+    {
+      "id": "fe98ae61-a425-415e-aa67-7fde8111bba1",
+      "timestamp": "2025-11-16T13:20:31.323Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "b5f50343-65b5-4c78-8c96-91dbd631e931",
+      "content": "Your event \"Amapiano Festival\" has been approved by Admin User and is now live on Vibely."
+    },
+    {
+      "id": "8623e187-7750-4a62-b564-ab09df8c66ad",
+      "timestamp": "2025-11-16T13:21:09.349Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "b5f50343-65b5-4c78-8c96-91dbd631e931",
+      "content": "Your event \"Amapiano Festival\" has been suspended and is currently hidden from attendees."
+    },
+    {
+      "id": "a37a6051-62a0-4236-aa7a-1905d1bef3be",
+      "timestamp": "2025-11-16T13:23:30.017Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "content": "Your event \"Test Event\" was rejected during moderation."
+    },
+    {
+      "id": "04c95009-be2b-4deb-b459-663b0418a526",
+      "timestamp": "2025-11-16T13:39:08.810Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "content": "Your event \"Test Event\" has been approved by Admin User and is now live on Vibely."
+    },
+    {
+      "id": "0e5872e0-6cbb-4537-927c-efe5ba77e1ab",
+      "timestamp": "2025-11-16T13:39:29.750Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "b5f50343-65b5-4c78-8c96-91dbd631e931",
+      "content": "Your event \"Amapiano Festival\" has been approved by Admin User and is now live on Vibely."
+    },
+    {
+      "id": "e87e1b97-c075-491a-8699-31e0d63b8907",
+      "timestamp": "2025-11-16T13:40:10.221Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "b5f50343-65b5-4c78-8c96-91dbd631e931",
+      "content": "Your event \"Amapiano Festival\" has been archived by Admin User."
+    },
+    {
+      "id": "e6829a3d-61ec-42fe-914a-ec7645f8c064",
+      "timestamp": "2025-11-16T13:40:19.820Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "content": "Your event \"Test Event\" has been archived by Admin User."
+    },
+    {
+      "id": "94473cba-ba7a-4f69-98a4-98b206f2dee8",
+      "timestamp": "2025-11-16T13:40:28.833Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "content": "Your event \"Tech Expo\" has been archived by Admin User."
+    },
+    {
+      "id": "04eb6626-7060-41c0-9d4d-5e707a14e530",
+      "timestamp": "2025-11-16T13:40:41.075Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "content": "Your event \"Test Event\" has been approved by Admin User and is now live on Vibely."
+    },
+    {
+      "id": "50c3cdb8-5318-4d67-a8a4-415670eee8c4",
+      "timestamp": "2025-11-16T13:41:16.500Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "content": "Your event \"Tech Expo\" has been approved by Admin User and is now live on Vibely."
+    },
+    {
+      "id": "176d2b8d-a8c6-468d-88b8-6b083e5c0c3b",
+      "timestamp": "2025-11-16T13:41:18.480Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "b5f50343-65b5-4c78-8c96-91dbd631e931",
+      "content": "Your event \"Amapiano Festival\" has been approved by Admin User and is now live on Vibely."
+    },
+    {
+      "id": "1932ba11-2030-4e5a-8161-fbeb4ee4b1a1",
+      "timestamp": "2025-11-17T10:19:12.878Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "b5f50343-65b5-4c78-8c96-91dbd631e931",
+      "content": "Your event \"Amapiano Festival\" has been archived by Admin User."
+    },
+    {
+      "id": "006cdf66-2079-49a5-817b-e3ad73b89d8b",
+      "timestamp": "2025-11-17T11:06:09.621Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "b5f50343-65b5-4c78-8c96-91dbd631e931",
+      "content": "Your event \"Amapiano Festival\" has been approved by Admin User and is now live on Vibely."
     }
   ]
 }
