@@ -149,6 +149,7 @@ const OrganizerKycModal: React.FC<OrganizerKycModalProps> = ({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [cameraFacing, setCameraFacing] = useState<'user' | 'environment'>('user');
 
   const kycStatus = profile.status;
   const emailVerified = true; // OTP disabled for now
@@ -166,7 +167,9 @@ const OrganizerKycModal: React.FC<OrganizerKycModalProps> = ({
 
     const start = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: cameraFacing },
+        });
         setMediaStream(stream);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -189,7 +192,7 @@ const OrganizerKycModal: React.FC<OrganizerKycModalProps> = ({
         setMediaStream(null);
       }
     };
-  }, [cameraTarget]);
+  }, [cameraTarget, cameraFacing]);
 
   const setField = (path: string, value: string) => {
     setForm((prev) => {
@@ -517,7 +520,10 @@ const OrganizerKycModal: React.FC<OrganizerKycModalProps> = ({
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => setCameraTarget('idFront')}
+                      onClick={() => {
+                        setCameraFacing('environment');
+                        setCameraTarget('idFront');
+                      }}
                       className="mt-1 inline-flex w-fit items-center rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
                     >
                       Use camera
@@ -548,7 +554,10 @@ const OrganizerKycModal: React.FC<OrganizerKycModalProps> = ({
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => setCameraTarget('idBack')}
+                      onClick={() => {
+                        setCameraFacing('environment');
+                        setCameraTarget('idBack');
+                      }}
                       className="mt-1 inline-flex w-fit items-center rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
                     >
                       Use camera
@@ -602,7 +611,10 @@ const OrganizerKycModal: React.FC<OrganizerKycModalProps> = ({
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => setCameraTarget('selfie')}
+                      onClick={() => {
+                        setCameraFacing('user');
+                        setCameraTarget('selfie');
+                      }}
                       className="mt-1 inline-flex w-fit items-center rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
                     >
                       Use camera

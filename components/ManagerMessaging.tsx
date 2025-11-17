@@ -17,6 +17,7 @@ import { playMessageFeedback } from '../utils/feedback';
 interface ManagerMessagingProps {
   user: User;
   onClose: () => void;
+  initialRecipient?: User | null;
 }
 
 interface Conversation {
@@ -28,7 +29,7 @@ interface Conversation {
   isOnline: boolean;
 }
 
-const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose }) => {
+const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose, initialRecipient }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -189,12 +190,26 @@ const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose }) =>
     };
   }, [user.id]);
 
-  // Load conversations when component mounts
+  // Load conversations when component mounts (seed with initial recipient if provided)
   useEffect(() => {
-    // In a real app, we would fetch conversations from an API
-    // For now, we'll keep an empty array since conversations will be populated by incoming messages
-    setConversations([]);
-  }, []);
+    if (initialRecipient) {
+      setConversations([
+        {
+          userId: initialRecipient.id,
+          userName: initialRecipient.name,
+          lastMessage: 'Tap to load conversation history',
+          lastMessageTime: new Date().toISOString(),
+          unread: 0,
+          isOnline: false,
+        },
+      ]);
+      setActiveConversation(initialRecipient.id);
+      activeConversationRef.current = initialRecipient.id;
+      fetchConversation(initialRecipient.id);
+    } else {
+      setConversations([]);
+    }
+  }, [initialRecipient]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -205,11 +220,25 @@ const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose }) =>
   const loadMessages = (userId: string) => {
     activeConversationRef.current = userId;
     setActiveConversation(userId);
-    setConversations(prev =>
-      prev.map(conv =>
-        conv.userId === userId ? { ...conv, unread: 0 } : conv
-      )
-    );
+    setConversations(prev => {
+      const exists = prev.some(conv => conv.userId === userId);
+      if (exists) {
+        return prev.map(conv =>
+          conv.userId === userId ? { ...conv, unread: 0 } : conv
+        );
+      }
+      return [
+        {
+          userId,
+          userName: 'Conversation',
+          lastMessage: 'Tap to load conversation history',
+          lastMessageTime: new Date().toISOString(),
+          unread: 0,
+          isOnline: false,
+        },
+        ...prev,
+      ];
+    });
     setMessages([]);
     fetchConversation(userId);
   };

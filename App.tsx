@@ -25,7 +25,7 @@ import EventMap from './components/EventMap';
 import Footer from './components/Footer';
 import OrganizerTiers from './components/OrganizerTiers';
 import SubscriptionModal from './components/SubscriptionModal';
-import Messaging from './components/Messaging';
+import ManagerMessaging from './components/ManagerMessaging';
 import {
   getPlatformStats,
   getAdminEvents,
@@ -411,7 +411,15 @@ const App: React.FC = () => {
   };
 
   const openMessaging = (recipient: User) => {
-    setMessagingRecipient(recipient);
+    const normalizedRecipient: User = {
+      ...recipient,
+      email: recipient.email || `${recipient.id || 'organizer'}@vibely.local`,
+      role: recipient.role || 'manager',
+      status: recipient.status || 'active',
+      interests: recipient.interests || [],
+      attendedEvents: recipient.attendedEvents || [],
+    };
+    setMessagingRecipient(normalizedRecipient);
     setActiveModal('messaging');
   };
 
@@ -538,34 +546,36 @@ const App: React.FC = () => {
         onShowTickets={() => setActiveModal('myTickets')}
         purchasedTicketsCount={tickets.length}
         onOpenMessaging={user ? () => {
-          // For now, we'll need to implement a contacts list or direct messaging
-          // For demo, let's use a more realistic approach
-          // In a real app, this would open a contacts/messaging interface
-          if (events.length > 0) {
-            const firstEventOrganizer = events[0].organizer;
+          // Prefer the organizer of the user's first ticket; fall back to first listed event; then admin
+          const ticketOrganizer = tickets.length > 0 ? tickets[0].event.organizer : null;
+          const fallbackEventOrganizer = events.length > 0 ? events[0].organizer : null;
+          const targetOrganizer = ticketOrganizer ?? fallbackEventOrganizer;
+
+          if (targetOrganizer) {
             const organizerUser: User = {
-              id: firstEventOrganizer.id,
-              name: firstEventOrganizer.name,
-              email: 'organizer@example.com', // Default email since organizer doesn't have email in the event object
+              id: targetOrganizer.id,
+              name: targetOrganizer.name,
+              email: `${targetOrganizer.id || 'organizer'}@vibely.local`,
               role: 'manager' as const,
               status: 'active' as const,
               interests: [],
               attendedEvents: []
             };
             openMessaging(organizerUser);
-          } else {
-            // Default fallback recipient
-            const defaultManager = {
-              id: 'admin-1',
-              name: 'Admin User',
-              email: 'admin@example.com',
-              role: 'admin' as const,
-              status: 'active' as const,
-              interests: [],
-              attendedEvents: []
-            };
-            openMessaging(defaultManager);
+            return;
           }
+
+          // Default fallback recipient
+          const defaultManager: User = {
+            id: 'admin-1',
+            name: 'Admin User',
+            email: 'admin@example.com',
+            role: 'admin',
+            status: 'active',
+            interests: [],
+            attendedEvents: []
+          };
+          openMessaging(defaultManager);
         } : undefined}
       />
       
@@ -687,11 +697,11 @@ const App: React.FC = () => {
           onSuccess={handleSubscriptionSuccess} 
         />
       )}
-      {activeModal === 'messaging' && user && messagingRecipient && (
-        <Messaging 
-          currentUser={user} 
-          recipient={messagingRecipient} 
-          onClose={() => setActiveModal(null)} 
+      {activeModal === 'messaging' && user && (
+        <ManagerMessaging
+          user={user}
+          onClose={() => setActiveModal(null)}
+          initialRecipient={messagingRecipient}
         />
       )}
       {activeModal === 'transactions' && user && (
