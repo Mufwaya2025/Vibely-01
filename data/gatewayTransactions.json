@@ -1347,6 +1347,164 @@
       "id": "txn_e1bb5338-3297-43c4-8970-493285e03c0f",
       "createdAt": "2025-11-17T11:06:43.541Z",
       "updatedAt": "2025-11-17T11:06:43.541Z"
+    },
+    {
+      "externalId": "59bbcd8d-85fe-4230-9a79-04a2af2c93df",
+      "reference": "ticket-1763449616106-r65c08",
+      "purpose": "ticket",
+      "eventId": "evt-52da7333-f0f3-4ed1-ae07-c2cc596f9f98",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "succeeded",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Test",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1763449014883-pcpwe",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Test (General Admission)"
+      },
+      "id": "txn_413ec5e8-4f1e-4d2d-aad2-e1f091931ef4",
+      "createdAt": "2025-11-18T07:06:56.106Z",
+      "updatedAt": "2025-11-18T07:08:37.457Z",
+      "lencoReference": "2532201517",
+      "fee": 0.01,
+      "bearer": "merchant",
+      "channel": "mobile-money",
+      "rawResponse": {
+        "id": "59bbcd8d-85fe-4230-9a79-04a2af2c93df",
+        "initiatedAt": "2025-11-18T07:06:58.022Z",
+        "completedAt": "2025-11-18T07:08:34.320Z",
+        "amount": "1.00",
+        "fee": "0.01",
+        "bearer": "merchant",
+        "currency": "ZMW",
+        "reference": "ticket-1763449616106-r65c08",
+        "lencoReference": "2532201517",
+        "type": "mobile-money",
+        "status": "successful",
+        "source": "api",
+        "reasonForFailure": null,
+        "settlementStatus": "settled",
+        "settlement": {
+          "id": "84028682-f9b6-4940-9be0-68993796bb9f",
+          "amountSettled": "0.99",
+          "currency": "ZMW",
+          "createdAt": "2025-11-18T07:08:34.373Z",
+          "settledAt": "2025-11-18T07:08:34.480Z",
+          "status": "settled",
+          "type": "instant",
+          "accountId": "d901de95-1bd3-410c-a0ac-897e4636adb2"
+        },
+        "mobileMoneyDetails": {
+          "country": "zm",
+          "phone": "0777098622",
+          "operator": "airtel",
+          "accountName": "Kaungu Mufwaya",
+          "operatorTransactionId": "MP251118.0908.C98809"
+        },
+        "bankAccountDetails": null,
+        "cardDetails": null
+      },
+      "ticketId": "tkt-1763449717455-38f49n"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1763463077098-xv6su1",
+      "purpose": "ticket",
+      "eventId": "evt-3b900344-279e-484e-a03e-596f109ac694",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Jazz Night",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1763462909451-sm1nv",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Jazz Night (General Admission)"
+      },
+      "id": "txn_7542995f-c313-47be-bfdd-f9b189463798",
+      "createdAt": "2025-11-18T10:51:17.098Z",
+      "updatedAt": "2025-11-18T10:51:17.098Z"
+    },
+    {
+      "externalId": "83b4d40f-fe0b-4a67-9cce-a6875ed9606f",
+      "reference": "ticket-1763464508275-79w7md",
+      "purpose": "ticket",
+      "eventId": "evt-3b900344-279e-484e-a03e-596f109ac694",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "succeeded",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Jazz Night",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1763462909451-sm1nv",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Jazz Night (General Admission)"
+      },
+      "id": "txn_a7d157b3-b612-4ad2-93e2-c42f4f1181fb",
+      "createdAt": "2025-11-18T11:15:08.275Z",
+      "updatedAt": "2025-11-18T11:15:36.841Z",
+      "lencoReference": "2532203539",
+      "fee": 0.01,
+      "bearer": "merchant",
+      "channel": "mobile-money",
+      "rawResponse": {
+        "id": "83b4d40f-fe0b-4a67-9cce-a6875ed9606f",
+        "initiatedAt": "2025-11-18T11:15:10.960Z",
+        "completedAt": "2025-11-18T11:15:31.946Z",
+        "amount": "1.00",
+        "fee": "0.01",
+        "bearer": "merchant",
+        "currency": "ZMW",
+        "reference": "ticket-1763464508275-79w7md",
+        "lencoReference": "2532203539",
+        "type": "mobile-money",
+        "status": "successful",
+        "source": "api",
+        "reasonForFailure": null,
+        "settlementStatus": "settled",
+        "settlement": {
+          "id": "676a5999-3cd3-420f-809b-7facc5be6c49",
+          "amountSettled": "0.99",
+          "currency": "ZMW",
+          "createdAt": "2025-11-18T11:15:32.034Z",
+          "settledAt": "2025-11-18T11:15:32.165Z",
+          "status": "settled",
+          "type": "instant",
+          "accountId": "d901de95-1bd3-410c-a0ac-897e4636adb2"
+        },
+        "mobileMoneyDetails": {
+          "country": "zm",
+          "phone": "0777098622",
+          "operator": "airtel",
+          "accountName": "Kaungu Mufwaya",
+          "operatorTransactionId": "MP251118.1315.H27430"
+        },
+        "bankAccountDetails": null,
+        "cardDetails": null
+      },
+      "ticketId": "tkt-1763464536840-grf86k"
     }
   ]
 }

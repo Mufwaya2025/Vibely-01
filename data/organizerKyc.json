@@ -62,7 +62,7 @@
       "profile": {
         "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
         "organizerType": "individual",
-        "status": "limited",
+        "status": "verified",
         "contacts": {
           "legalName": "Mufwaya Kaungu",
           "tradingName": "Mufwaya Kaungu",
@@ -109,7 +109,7 @@
           "emailVerified": false
         },
         "submittedAt": "2025-11-17T10:42:27.517Z",
-        "reviewedAt": "2025-11-17T10:57:45.944Z"
+        "reviewedAt": "2025-11-17T12:33:53.526Z"
       },
       "emailOtp": null
     }

@@ -18,7 +18,17 @@ import {
   handleSubmitReview,
   handleScanTicket,
 } from '../../api/tickets';
-import { handleDeviceAuthorization, handleDeviceLogout } from '../../api/devices';
+import {
+  handleDeviceAuthorization,
+  handleDeviceLogout,
+  handleManagerCreateDevice,
+  handleManagerListDevices,
+  handleManagerAssignDevice,
+  handleManagerUpdateDevice,
+  handleManagerDeleteDevice,
+  handleManagerRegenerateDeviceSecret,
+} from '../../api/devices';
+import { handleManagerCreateStaffUser, handleManagerListStaffUsers } from '../../api/staffUsers';
 import { handleTicketScan } from '../../api/ticketScan';
 import {
   handleCreatePaymentSession,
@@ -146,6 +156,22 @@ export const registerRoutes = (app: Express) => {
   router.post('/devices/authorize', createDeviceAuthRateLimitedHandler(handleDeviceAuthorization));
   router.post('/devices/logout', createHandler(handleDeviceLogout));
   router.post('/tickets/scan-secure', createTicketScanRateLimitedHandler(handleTicketScan)); // Device-based scan
+  router.get('/manager/staff-users', createHandler(handleManagerListStaffUsers));
+  router.post('/manager/staff-users', createHandler(handleManagerCreateStaffUser));
+  router.get('/manager/devices', createHandler(handleManagerListDevices));
+  router.post('/manager/devices', createHandler(handleManagerCreateDevice));
+  router.post('/manager/devices/:id/assign', createHandler((req) =>
+    handleManagerAssignDevice({ ...req, params: { id: req.params?.id } })
+  ));
+  router.patch('/manager/devices/:id', createHandler((req) =>
+    handleManagerUpdateDevice({ ...req, params: { id: req.params?.id } })
+  ));
+  router.post('/manager/devices/:id/regenerate', createHandler((req) =>
+    handleManagerRegenerateDeviceSecret({ ...req, params: { id: req.params?.id } })
+  ));
+  router.delete('/manager/devices/:id', createHandler((req) =>
+    handleManagerDeleteDevice({ ...req, params: { id: req.params?.id } })
+  ));
 
   // Payments
   router.post('/payments/session', createHandler(handleCreatePaymentSession));

@@ -111,7 +111,19 @@ const App: React.FC = () => {
       if (!user) return;
       try {
         const userTickets = await getTicketsForUser(user.id);
-        setTickets(userTickets);
+        const eventMap = new Map(events.map((evt) => [evt.id, evt]));
+        const normalizedTickets = userTickets
+          .map((ticket) => {
+            const event = ticket.event ?? eventMap.get(ticket.eventId);
+            if (!event) {
+              console.warn(`Skipping ticket ${ticket.ticketId} because event ${ticket.eventId} was not found.`);
+              return null;
+            }
+            return { ...ticket, event };
+          })
+          .filter((ticket): ticket is Ticket & { event: Event } => Boolean(ticket));
+
+        setTickets(normalizedTickets);
         if (options.includeRecommendations && user.role === 'attendee') {
           const recommendations = await getAIRecommendations(
             user.interests,
@@ -123,7 +135,7 @@ const App: React.FC = () => {
         console.error('Failed to refresh user tickets', err);
       }
     },
-    [user]
+    [events, user]
   );
 
   // Fetch user-specific data after login

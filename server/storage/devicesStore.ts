@@ -12,6 +12,8 @@ interface Device {
   id: string;
   name?: string;
   staffUserId: string;
+  organizerId?: string;
+  eventId?: string;
   devicePublicId: string;
   deviceSecret: string; // This will be hashed
   lastIp?: string;
@@ -71,7 +73,12 @@ let cache: Device[] | null = null;
 
 const getCache = (): Device[] => {
   if (!cache) {
-    cache = loadFromDisk();
+    cache = loadFromDisk().map((device: any) => {
+      const { deviceSecretPlain, ...rest } = device;
+      return rest as Device;
+    });
+    // Persist sanitized data without plaintext secrets
+    persist(cache);
   }
   return cache;
 };
@@ -86,6 +93,10 @@ export const devicesStore = {
     return getCache().find((device) => device.id === id) ?? null;
   },
 
+  findAll(): Device[] {
+    return [...getCache()];
+  },
+
   findByPublicId(devicePublicId: string): Device | null {
     return getCache().find((device) => device.devicePublicId === devicePublicId) ?? null;
   },
@@ -94,8 +105,11 @@ export const devicesStore = {
     id: string;
     name?: string;
     staffUserId: string;
+    organizerId?: string;
+    eventId?: string;
     devicePublicId: string;
     deviceSecret: string;
+    isActive?: boolean;
   }): Device {
     const existing = this.findByPublicId(data.devicePublicId);
     if (existing) {
@@ -107,9 +121,11 @@ export const devicesStore = {
       id: data.id,
       name: data.name,
       staffUserId: data.staffUserId,
+      organizerId: data.organizerId,
+      eventId: data.eventId,
       devicePublicId: data.devicePublicId,
       deviceSecret: bcrypt.hashSync(data.deviceSecret, DEFAULT_HASH_ROUNDS), // Hash the device secret
-      isActive: true,
+      isActive: data.isActive ?? true,
       createdAt: now,
       updatedAt: now,
     };
@@ -130,10 +146,20 @@ export const devicesStore = {
       ...updates,
       updatedAt: new Date().toISOString(),
     };
+    delete (updatedDevice as any).deviceSecretPlain;
 
     devices[index] = updatedDevice;
     setCache(devices);
     return updatedDevice;
+  },
+
+  delete(id: string): boolean {
+    const devices = getCache();
+    const index = devices.findIndex((device) => device.id === id);
+    if (index === -1) return false;
+    devices.splice(index, 1);
+    setCache(devices);
+    return true;
   },
 
   verifyDeviceSecret(device: Device, plainSecret: string): boolean {

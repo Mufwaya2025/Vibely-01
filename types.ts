@@ -116,6 +116,7 @@ export interface StaffUser {
   email: string;
   passwordHash: string;
   name?: string;
+  organizerId?: string;
   active: boolean;
   createdAt: string;
 }
@@ -229,6 +230,8 @@ export interface Device {
   id: string;
   name?: string;
   staffUserId: string;
+  organizerId?: string;
+  eventId?: string;
   devicePublicId: string;
   deviceSecret: string;
   lastIp?: string;

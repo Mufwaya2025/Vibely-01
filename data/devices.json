@@ -1,0 +1,18 @@
+{
+  "devices": [
+    {
+      "id": "dev-1763477385618",
+      "name": "Main Gate",
+      "staffUserId": "staff-1763402515290",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "eventId": "evt-3b900344-279e-484e-a03e-596f109ac694",
+      "devicePublicId": "dev-1coroj4p",
+      "deviceSecret": "$2a$10$qr.TYfh9DVP2ZEDeH3RpduoDpA/vxSl90SCLxR1Tz9n9G8mSIjuu.",
+      "isActive": true,
+      "createdAt": "2025-11-18T14:49:45.618Z",
+      "updatedAt": "2025-11-18T15:34:27.394Z",
+      "lastSeenAt": "2025-11-18T15:34:27.394Z",
+      "lastIp": "unknown"
+    }
+  ]
+}

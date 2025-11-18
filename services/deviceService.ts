@@ -1,5 +1,13 @@
 import { apiFetch } from '../utils/apiClient';
 
+const parseJson = async <T>(response: Response, fallbackMessage: string): Promise<T> => {
+  if (!response.ok) {
+    const message = await response.text().catch(() => fallbackMessage);
+    throw new Error(message || fallbackMessage);
+  }
+  return response.json() as Promise<T>;
+};
+
 interface DeviceAuthorizationRequest {
   device_public_id: string;
   device_secret: string;
@@ -15,6 +23,8 @@ interface DeviceAuthorizationResponse {
     id: string;
     device_public_id: string;
     staff_user_id: string;
+    eventId: string | null;
+    event_id: string | null;
   };
   staff_user: {
     id: string;
@@ -113,3 +123,74 @@ export const scanTicketWithDevice = async (
   
   return response.json();
 };
+
+export const listOrganizerDevices = async (user?: any) =>
+  parseJson(
+    await apiFetch('/api/manager/devices', { user }),
+    'Failed to load devices.'
+  );
+
+export const createOrganizerDevice = async (
+  name: string,
+  user?: any,
+  eventId?: string | null,
+  staffUserId?: string | null
+) =>
+  parseJson(
+    await apiFetch('/api/manager/devices', {
+      method: 'POST',
+      user,
+      body: { name, eventId, staffUserId },
+    }),
+    'Failed to create device.'
+  );
+
+export const assignOrganizerDevice = async (
+  deviceId: string,
+  eventId: string | null,
+  staffUserId: string | null,
+  user?: any
+) =>
+  parseJson(
+    await apiFetch(`/api/manager/devices/${deviceId}/assign`, {
+      method: 'POST',
+      user,
+      body: { eventId, staffUserId },
+    }),
+    'Failed to assign device.'
+  );
+
+export const updateOrganizerDevice = async (
+  deviceId: string,
+  updates: { isActive?: boolean; name?: string },
+  user?: any
+) =>
+  parseJson(
+    await apiFetch(`/api/manager/devices/${deviceId}`, {
+      method: 'PATCH',
+      user,
+      body: updates,
+    }),
+    'Failed to update device.'
+  );
+
+export const deleteOrganizerDevice = async (deviceId: string, user?: any) => {
+  const response = await apiFetch(`/api/manager/devices/${deviceId}`, {
+    method: 'DELETE',
+    user,
+  });
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => 'Failed to delete device.');
+    throw new Error(message || 'Failed to delete device.');
+  }
+};
+
+export const regenerateOrganizerDeviceSecret = async (deviceId: string, user?: any) =>
+  parseJson(
+    await apiFetch(`/api/manager/devices/${deviceId}/regenerate`, {
+      method: 'POST',
+      user,
+    }),
+    'Failed to regenerate device secret.'
+  );

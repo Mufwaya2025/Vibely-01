@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
+import { deviceAuthDb as deviceDb } from '../../api/deviceAuthDb';
 
 // Load JWT secret from environment
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_jwt_secret_for_dev';
@@ -50,6 +51,19 @@ export const authenticateDevice = (req: Request, res: Response, next: NextFuncti
 
   if (!decoded) {
     return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+
+  const tokenRecord = deviceDb.deviceTokens.findByToken(token);
+  if (!tokenRecord || tokenRecord.revokedAt) {
+    return res.status(401).json({ error: 'Token revoked' });
+  }
+  if (tokenRecord.expiresAt && new Date(tokenRecord.expiresAt) < new Date()) {
+    return res.status(401).json({ error: 'Token expired' });
+  }
+
+  const device = deviceDb.devices.findById(decoded.sub);
+  if (!device || !device.isActive) {
+    return res.status(403).json({ error: 'Device inactive or not found' });
   }
 
   // Add device info to request for use in route handlers

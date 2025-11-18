@@ -4,7 +4,7 @@ import { apiFetch } from '../utils/apiClient';
 /**
  * Fetches all tickets for a specific user from the API.
  */
-export const getTicketsForUser = async (userId: string): Promise<(Ticket & { event: Event })[]> => {
+export const getTicketsForUser = async (userId: string): Promise<(Ticket & { event?: Event })[]> => {
   const response = await apiFetch('/api/tickets', { query: { userId } });
   if (!response.ok) throw new Error('Failed to fetch user tickets');
   return response.json();

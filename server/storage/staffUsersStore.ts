@@ -13,6 +13,7 @@ interface StaffUser {
   email: string;
   passwordHash: string;
   name?: string;
+  organizerId?: string;
   active: boolean;
   createdAt: string;
 }
@@ -97,6 +98,7 @@ export const staffUsersStore = {
     name?: string;
     email: string;
     password: string;
+    organizerId?: string;
   }): StaffUser {
     const normalized = normalizeEmail(data.email);
     const existing = this.findByEmail(normalized);
@@ -108,6 +110,7 @@ export const staffUsersStore = {
       id: data.id,
       name: data.name,
       email: data.email,
+      organizerId: data.organizerId,
       passwordHash: bcrypt.hashSync(data.password, DEFAULT_HASH_ROUNDS),
       active: true,
       createdAt: new Date().toISOString(),

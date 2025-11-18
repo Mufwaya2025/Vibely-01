@@ -159,18 +159,36 @@ const ManagerMessaging: React.FC<ManagerMessagingProps> = ({ user, onClose, init
         (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
       setMessages(sorted);
-      setConversations(prev =>
-        prev.map(conv =>
-          conv.userId === data.userId
-            ? {
-                ...conv,
-                lastMessage: sorted[sorted.length - 1]?.content ?? conv.lastMessage,
-                lastMessageTime: sorted[sorted.length - 1]?.timestamp ?? conv.lastMessageTime,
-                unread: 0,
-              }
-            : conv
-        )
-      );
+      const last = sorted[sorted.length - 1];
+      const displayName =
+        last?.senderId === user.id ? last?.receiverName ?? 'Conversation' : last?.senderName ?? 'Conversation';
+      setConversations(prev => {
+        const exists = prev.some(conv => conv.userId === data.userId);
+        if (exists) {
+          return prev.map(conv =>
+            conv.userId === data.userId
+              ? {
+                  ...conv,
+                  userName: conv.userName || displayName,
+                  lastMessage: last?.content ?? conv.lastMessage,
+                  lastMessageTime: last?.timestamp ?? conv.lastMessageTime,
+                  unread: 0,
+                }
+              : conv
+          );
+        }
+        return [
+          {
+            userId: data.userId,
+            userName: displayName,
+            lastMessage: last?.content ?? 'Tap to load conversation history',
+            lastMessageTime: last?.timestamp ?? new Date().toISOString(),
+            unread: 0,
+            isOnline: false,
+          },
+          ...prev,
+        ];
+      });
       sorted.forEach(msg => {
         if (!msg.read && msg.receiverId === user.id) {
           markMessageAsRead(msg.id);

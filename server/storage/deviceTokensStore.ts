@@ -14,6 +14,7 @@ interface DeviceToken {
   expiresAt?: string;
   revokedAt?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 interface PersistedDeviceTokens {
@@ -100,6 +101,7 @@ export const deviceTokensStore = {
       token: data.token, // Should be hashed in a real implementation
       expiresAt: data.expiresAt,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     const tokens = getCache();
@@ -116,6 +118,7 @@ export const deviceTokensStore = {
     tokens[index] = {
       ...tokens[index],
       ...updates,
+      updatedAt: new Date().toISOString(),
     };
 
     setCache(tokens);
@@ -124,5 +127,10 @@ export const deviceTokensStore = {
 
   revoke(id: string): DeviceToken | null {
     return this.update(id, { revokedAt: new Date().toISOString() });
+  },
+
+  deleteByDeviceId(deviceId: string): void {
+    const tokens = getCache().filter((token) => token.deviceId !== deviceId);
+    setCache(tokens);
   },
 };

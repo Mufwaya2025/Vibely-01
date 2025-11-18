@@ -1,0 +1,13 @@
+{
+  "staffUsers": [
+    {
+      "id": "staff-1763402515290",
+      "name": "Test",
+      "email": "test@gmail.com",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "passwordHash": "$2a$10$sNKE/k1OAxoqDQmdXh8wf.t5Np/L4155c58i91z0ZUnq1f1NnMRHO",
+      "active": true,
+      "createdAt": "2025-11-17T18:01:55.575Z"
+    }
+  ]
+}

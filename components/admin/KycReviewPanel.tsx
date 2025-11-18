@@ -99,24 +99,48 @@ const KycReviewPanel: React.FC<KycReviewPanelProps> = ({
                   ? `${profile.payoutDetails.bankName ?? ''} • ${profile.payoutDetails.accountNumber ?? ''}`
                   : `${profile.payoutDetails.walletProvider ?? ''} • ${profile.payoutDetails.walletNumber ?? ''}`;
 
+              const isImage = (val: string) =>
+                /^data:image\//.test(val) ||
+                /\.(png|jpe?g|gif|webp)$/i.test(val.split('?')[0] || '');
+              const isPdf = (val: string) =>
+                /^data:application\/pdf/.test(val) || /\.pdf$/i.test(val.split('?')[0] || '');
+
               const renderDoc = (label: string, value?: string) => (
                 <div className="rounded-lg border border-slate-200 bg-white p-3">
                   <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
                     {label}
                   </p>
                   {value ? (
-                    <div className="mt-1 flex items-center gap-2 text-xs text-slate-700">
-                      <a
-                        href={value}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-md bg-purple-50 px-2 py-1 font-semibold text-purple-700 hover:bg-purple-100"
-                      >
-                        View
-                      </a>
-                      {value.startsWith('data:') && (
-                        <span className="rounded bg-slate-100 px-2 py-0.5 text-[0.65rem] text-slate-600">
-                          Embedded
+                    <div className="mt-1 space-y-2 text-xs text-slate-700">
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={value}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-md bg-purple-50 px-2 py-1 font-semibold text-purple-700 hover:bg-purple-100"
+                        >
+                          View
+                        </a>
+                        {value.startsWith('data:') && (
+                          <span className="rounded bg-slate-100 px-2 py-0.5 text-[0.65rem] text-slate-600">
+                            Embedded
+                          </span>
+                        )}
+                        <span className="truncate text-[0.7rem] text-slate-500" title={value}>
+                          {value.slice(0, 60)}
+                          {value.length > 60 ? '…' : ''}
+                        </span>
+                      </div>
+                      {isImage(value) && (
+                        <img
+                          src={value}
+                          alt={label}
+                          className="max-h-40 w-full rounded-md border border-slate-100 object-contain"
+                        />
+                      )}
+                      {isPdf(value) && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-[0.7rem] text-slate-700">
+                          PDF preview not shown; use View to open.
                         </span>
                       )}
                     </div>

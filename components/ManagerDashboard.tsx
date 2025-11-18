@@ -5,6 +5,7 @@ import {
   SubscriptionTier,
   OrganizerKycProfile,
   OrganizerKycRequestPayload,
+  StaffUser,
 } from '../types';
 import { getSubscriptionTiers, cancelSubscription } from '../services/subscriptionService';
 import {
@@ -14,11 +15,20 @@ import {
   ProcessPaymentResult,
 } from '../services/paymentService';
 import {
+  listOrganizerDevices,
+  createOrganizerDevice,
+  assignOrganizerDevice,
+  updateOrganizerDevice,
+  deleteOrganizerDevice,
+  regenerateOrganizerDeviceSecret,
+} from '../services/deviceService';
+import {
   getOrganizerKycProfile,
   requestOrganizerEmailOtp,
   submitOrganizerKycProfile,
   verifyOrganizerEmailOtp,
 } from '../services/kycService';
+import { listStaffUsers, createStaffUser } from '../services/staffUserService';
 
 import CreateEventModal from './CreateEventModal';
 import EditEventModal from './EditEventModal';
@@ -125,6 +135,7 @@ import SettingsDashboard from './SettingsDashboard';
 import SubscriptionModal from './SubscriptionModal';
 import ManagerMessaging from './ManagerMessaging';
 import TransactionHistoryPanel from './TransactionHistoryPanel';
+import DeviceListPanel from './DeviceListPanel';
 import ListIcon from './icons/ListIcon';
 import ChartBarIcon from './icons/ChartBarIcon';
 import WalletIcon from './icons/WalletIcon';
@@ -134,6 +145,7 @@ import CogIcon from './icons/CogIcon';
 import PlusCircleIcon from './icons/PlusCircleIcon';
 import QrCodeIcon from './icons/QrCodeIcon';
 import TicketScanner from './TicketScanner';
+import StaffManagementPanel from './StaffManagementPanel';
 
 interface ManagerDashboardProps {
   user: User;
@@ -154,7 +166,8 @@ type Tab =
   | 'subscriptions'
   | 'settings'
   | 'scanner'
-  | 'messages';
+  | 'messages'
+  | 'devices';
 
 const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
   user,
@@ -183,6 +196,11 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
   const [verifyingReference, setVerifyingReference] = useState<string | null>(null);
   const [isScannerModalOpen, setIsScannerModalOpen] = useState(false);
   const [scannerEventId, setScannerEventId] = useState<string | null>(null);
+  const [isLoadingDevices, setIsLoadingDevices] = useState(false);
+  const [devices, setDevices] = useState<any[]>([]);
+  const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
+  const [isLoadingStaffUsers, setIsLoadingStaffUsers] = useState(false);
+  const [staffUsersError, setStaffUsersError] = useState<string | null>(null);
   // Messaging state
   const [conversations, setConversations] = useState<any[]>([]);
   const [activeConversation, setActiveConversation] = useState<any>(null);
@@ -362,6 +380,69 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
     }
   };
 
+  const loadDevices = async () => {
+    if (isLoadingDevices) return;
+    setIsLoadingDevices(true);
+    try {
+      const res = await listOrganizerDevices(user);
+      setDevices(res.devices ?? []);
+    } catch (err) {
+      console.error('Failed to load devices', err);
+    } finally {
+      setIsLoadingDevices(false);
+    }
+  };
+
+  const handleToggleDeviceActive = async (deviceId: string, isActive: boolean) => {
+    try {
+      const res = await updateOrganizerDevice(deviceId, { isActive }, user);
+      const updated = res?.device ?? null;
+      if (updated) {
+        setDevices((prev) => prev.map((d) => (d.id === deviceId ? { ...d, ...updated } : d)));
+      } else {
+        await loadDevices();
+      }
+    } catch (err) {
+      console.error('Failed to update device state', err);
+      await loadDevices();
+    }
+  };
+
+  const handleDeleteDevice = async (deviceId: string) => {
+    try {
+      await deleteOrganizerDevice(deviceId, user);
+      setDevices((prev) => prev.filter((d) => d.id !== deviceId));
+    } catch (err) {
+      console.error('Failed to delete device', err);
+      await loadDevices();
+    }
+  };
+
+  const handleRegenerateDeviceSecret = async (deviceId: string) => {
+    const res = await regenerateOrganizerDeviceSecret(deviceId, user);
+    const updatedDevice = res?.device ?? null;
+    if (updatedDevice) {
+      setDevices((prev) => prev.map((d) => (d.id === deviceId ? { ...d, ...updatedDevice } : d)));
+    }
+    return { secret: res.secret };
+  };
+
+  const loadStaffUsers = async () => {
+    if (isLoadingStaffUsers) return;
+    setIsLoadingStaffUsers(true);
+    setStaffUsersError(null);
+    try {
+      const res = await listStaffUsers(user);
+      setStaffUsers(res.staffUsers ?? []);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load staff users.';
+      setStaffUsersError(message);
+      console.error('Failed to load staff users', err);
+    } finally {
+      setIsLoadingStaffUsers(false);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -407,6 +488,13 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
     };
   }, [activeTab, user]);
 
+  useEffect(() => {
+    if (activeTab === 'devices') {
+      void loadDevices();
+      void loadStaffUsers();
+    }
+  }, [activeTab]);
+
   const handleVerifyTransaction = async (reference: string) => {
     if (!reference || verifyingReference) {
       return;
@@ -448,6 +536,11 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
   const handleTicketScanned = (ticketId: string) => {
     // Optionally update UI to show that a ticket was scanned
     console.log(`Ticket ${ticketId} scanned successfully`);
+  };
+
+  const handleCreateStaffUser = async (data: { name?: string; email: string; password: string }) => {
+    const res = await createStaffUser(data, user);
+    setStaffUsers((prev) => [res.staffUser, ...prev]);
   };
   
   const handleShareEvent = (event: Event) => {
@@ -862,6 +955,47 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
             onClose={() => handleTabChange('events')} 
           />
         );
+      case 'devices':
+        return (
+          <div className="space-y-6">
+            <StaffManagementPanel
+              staffUsers={staffUsers}
+              isLoading={isLoadingStaffUsers}
+              onRefresh={() => void loadStaffUsers()}
+              onCreate={handleCreateStaffUser}
+              error={staffUsersError}
+            />
+            <DeviceListPanel
+              user={user}
+              devices={devices}
+              isLoading={isLoadingDevices}
+              staffUsers={staffUsers}
+              onRefresh={() => {
+                void loadDevices();
+                void loadStaffUsers();
+              }}
+              onCreate={async (name, eventId, staffUserId) => {
+                const created = await createOrganizerDevice(name, user, eventId, staffUserId);
+                setDevices((prev) => [created.device, ...prev]);
+                return { publicId: created.device.devicePublicId, secret: created.secret };
+              }}
+              onAssign={async (deviceId, updates) => {
+                await assignOrganizerDevice(deviceId, updates.eventId, updates.staffUserId, user);
+                setDevices((prev) =>
+                  prev.map((d) =>
+                    d.id === deviceId
+                      ? { ...d, eventId: updates.eventId, staffUserId: updates.staffUserId ?? d.staffUserId }
+                      : d
+                  )
+                );
+              }}
+              onToggleActive={handleToggleDeviceActive}
+              onDelete={handleDeleteDevice}
+              onRegenerate={handleRegenerateDeviceSecret}
+              events={events.map((evt) => ({ id: evt.id, title: evt.title }))}
+            />
+          </div>
+        );
       default:
         return null;
     }
@@ -1015,6 +1149,7 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
                 label="Subs"
                 description="History"
               />
+              <NavItem tab="devices" icon={<QrCodeIcon className="w-5 h-5" />} label="Devices" description="Scanners" />
               <NavItem tab="scanner" icon={<QrCodeIcon className="w-5 h-5" />} label="Scanner" description="Tickets" />
               <NavItem tab="messages" icon={<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>} label="Messages" description="Inbox" />
               <NavItem tab="settings" icon={<CogIcon className="w-5 h-5" />} label="Settings" description="Plan" />

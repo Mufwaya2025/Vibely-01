@@ -170,6 +170,24 @@
       "senderName": "Admin User",
       "receiverId": "b5f50343-65b5-4c78-8c96-91dbd631e931",
       "content": "Your event \"Amapiano Festival\" has been approved by Admin User and is now live on Vibely."
+    },
+    {
+      "id": "b380468c-9058-444a-9b02-b09934ff72ff",
+      "timestamp": "2025-11-18T06:58:12.068Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "content": "Your event \"Test\" has been approved by Admin User and is now live on Vibely."
+    },
+    {
+      "id": "897d5c24-fa42-4af9-b3da-91cd8f145547",
+      "timestamp": "2025-11-18T10:50:06.122Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "content": "Your event \"Jazz Night\" has been approved by Admin User and is now live on Vibely."
     }
   ]
 }
