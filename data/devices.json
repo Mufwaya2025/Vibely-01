@@ -1,18 +1,30 @@
 {
   "devices": [
     {
-      "id": "dev-1763477385618",
-      "name": "Main Gate",
-      "staffUserId": "staff-1763402515290",
+      "id": "dev-1763562203660",
+      "name": "Device",
+      "staffUserId": "staff-1763562184158",
       "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
-      "eventId": "evt-3b900344-279e-484e-a03e-596f109ac694",
-      "devicePublicId": "dev-1coroj4p",
-      "deviceSecret": "$2a$10$qr.TYfh9DVP2ZEDeH3RpduoDpA/vxSl90SCLxR1Tz9n9G8mSIjuu.",
+      "eventId": "evt-8989570f-396c-44a8-8afc-2b797d0b0d25",
+      "devicePublicId": "dev-i3mkq1qk",
+      "deviceSecret": "$2a$10$o6s39W.Z7s2GoT/EjIQn4.qG74gu1C02OzDLVUuXGKIGMclU.Fc0u",
       "isActive": true,
-      "createdAt": "2025-11-18T14:49:45.618Z",
-      "updatedAt": "2025-11-18T15:34:27.394Z",
-      "lastSeenAt": "2025-11-18T15:34:27.394Z",
-      "lastIp": "unknown"
+      "createdAt": "2025-11-19T14:23:23.660Z",
+      "updatedAt": "2025-11-19T14:23:23.660Z"
+    },
+    {
+      "id": "dev-1763564979548",
+      "name": "Device Test",
+      "staffUserId": "staff-1763564802854",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "eventId": "evt-8989570f-396c-44a8-8afc-2b797d0b0d25",
+      "devicePublicId": "dev-6hp3qhk9",
+      "deviceSecret": "$2a$10$Ofrf4D1ZjtcuDMNf4uDx7uxHgNba.krcSaxZKOD2P0wySXUluFtSO",
+      "isActive": true,
+      "createdAt": "2025-11-19T15:09:39.550Z",
+      "updatedAt": "2025-11-19T16:37:52.895Z",
+      "lastSeenAt": "2025-11-19T16:37:52.894Z",
+      "lastIp": "102.208.220.204"
     }
   ]
 }

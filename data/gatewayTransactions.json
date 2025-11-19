@@ -1505,6 +1505,150 @@
         "cardDetails": null
       },
       "ticketId": "tkt-1763464536840-grf86k"
+    },
+    {
+      "externalId": "26ec3238-97bd-4c91-bbb1-a4a5aa679b7a",
+      "reference": "ticket-1763537094056-oo2hiu",
+      "purpose": "ticket",
+      "eventId": "evt-8989570f-396c-44a8-8afc-2b797d0b0d25",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "succeeded",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Food Feast Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1763536823344-y1vwd",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Food Feast Event (General Admission)"
+      },
+      "id": "txn_11927d93-246d-4118-9df1-647dcf292588",
+      "createdAt": "2025-11-19T07:24:54.057Z",
+      "updatedAt": "2025-11-19T07:25:35.047Z",
+      "lencoReference": "2532301707",
+      "fee": 0.01,
+      "bearer": "merchant",
+      "channel": "mobile-money",
+      "rawResponse": {
+        "id": "26ec3238-97bd-4c91-bbb1-a4a5aa679b7a",
+        "initiatedAt": "2025-11-19T07:24:55.905Z",
+        "completedAt": "2025-11-19T07:25:31.542Z",
+        "amount": "1.00",
+        "fee": "0.01",
+        "bearer": "merchant",
+        "currency": "ZMW",
+        "reference": "ticket-1763537094056-oo2hiu",
+        "lencoReference": "2532301707",
+        "type": "mobile-money",
+        "status": "successful",
+        "source": "api",
+        "reasonForFailure": null,
+        "settlementStatus": "settled",
+        "settlement": {
+          "id": "4e110787-c75b-4229-98dd-09720cdb1a2e",
+          "amountSettled": "0.99",
+          "currency": "ZMW",
+          "createdAt": "2025-11-19T07:25:31.617Z",
+          "settledAt": "2025-11-19T07:25:31.766Z",
+          "status": "settled",
+          "type": "instant",
+          "accountId": "d901de95-1bd3-410c-a0ac-897e4636adb2"
+        },
+        "mobileMoneyDetails": {
+          "country": "zm",
+          "phone": "0777098622",
+          "operator": "airtel",
+          "accountName": "Kaungu Mufwaya",
+          "operatorTransactionId": "MP251119.0925.S85541"
+        },
+        "bankAccountDetails": null,
+        "cardDetails": null
+      },
+      "ticketId": "tkt-1763537135046-e19p81"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1763570726791-gbswmq",
+      "purpose": "ticket",
+      "eventId": "evt-36048ac8-4159-4624-ba3b-f8a3c31dff39",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 2,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Jazz Night",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1763570493724-2yv0l",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Jazz Night (General Admission)"
+      },
+      "id": "txn_f7ae47c5-7df8-4439-a469-fb62ce512728",
+      "createdAt": "2025-11-19T16:45:26.792Z",
+      "updatedAt": "2025-11-19T16:45:26.792Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1763570797990-6a1vd3",
+      "purpose": "ticket",
+      "eventId": "evt-36048ac8-4159-4624-ba3b-f8a3c31dff39",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 2,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Jazz Night",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1763570493724-2yv0l",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Jazz Night (General Admission)"
+      },
+      "id": "txn_709357f6-86f3-4568-80ab-7d867da0d0f5",
+      "createdAt": "2025-11-19T16:46:37.991Z",
+      "updatedAt": "2025-11-19T16:46:37.991Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1763571177840-9ksn7x",
+      "purpose": "ticket",
+      "eventId": "evt-36048ac8-4159-4624-ba3b-f8a3c31dff39",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 2,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Jazz Night",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1763570493724-2yv0l",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Jazz Night (General Admission)"
+      },
+      "id": "txn_8a4a7f98-a5a1-47d4-92d8-71e7b240ec72",
+      "createdAt": "2025-11-19T16:52:57.840Z",
+      "updatedAt": "2025-11-19T16:52:57.840Z"
     }
   ]
 }

@@ -1,15 +1,18 @@
-import { deviceAuthDb as db } from './deviceAuthDb';
-import { Device, DeviceToken, StaffUser, User } from '../types';
+import { db } from './db';
+import { DeviceToken, StaffUser, User } from '../types';
 import bcrypt from 'bcryptjs';
 import { createDeviceToken } from '../server/utils/jwt';
-import { db as mainDb } from './db';
 
-const resolveStaffUserForOrganizer = (staffUserId: string | undefined | null, organizerId: string) => {
+const resolveStaffUserForOrganizer = (
+  staffUserId: string | undefined | null,
+  organizerId: string
+) => {
+  // If no staff user is specified, fall back to organizer (manager) context
   if (!staffUserId || staffUserId === organizerId) {
     return { staffUserId: organizerId, staffUser: null as StaffUser | null };
   }
 
-  const staffUser = mainDb.staffUsers.findById(staffUserId);
+  const staffUser = db.staffUsers.findById(staffUserId);
   if (!staffUser || !staffUser.active) {
     throw new Error('Staff user not found or inactive');
   }
@@ -21,7 +24,7 @@ const resolveStaffUserForOrganizer = (staffUserId: string | undefined | null, or
   return { staffUserId: staffUser.id, staffUser };
 };
 
-export async function handleDeviceAuthorization(req: { 
+export async function handleDeviceAuthorization(req: {
   body: {
     device_public_id: string;
     device_secret: string;
@@ -29,11 +32,22 @@ export async function handleDeviceAuthorization(req: {
     staff_user_password: string;
   };
   ip?: string;
+  headers?: Record<string, string>;
 }) {
-  const { device_public_id, device_secret, staff_user_email, staff_user_password } = req.body;
-  
+  const {
+    device_public_id,
+    device_secret,
+    staff_user_email,
+    staff_user_password,
+  } = req.body || ({} as any);
+
   // Validate input
-  if (!device_public_id || !device_secret || !staff_user_email || !staff_user_password) {
+  if (
+    !device_public_id ||
+    !device_secret ||
+    !staff_user_email ||
+    !staff_user_password
+  ) {
     return new Response(
       JSON.stringify({ error: 'Missing required fields' }),
       { status: 400, headers: { 'Content-Type': 'application/json' } }
@@ -51,7 +65,10 @@ export async function handleDeviceAuthorization(req: {
     }
 
     // Verify device secret
-    const isDeviceSecretValid = await bcrypt.compare(device_secret, device.deviceSecret);
+    const isDeviceSecretValid = await bcrypt.compare(
+      device_secret,
+      device.deviceSecret
+    );
     if (!isDeviceSecretValid) {
       return new Response(
         JSON.stringify({ error: 'Invalid device credentials' }),
@@ -60,71 +77,114 @@ export async function handleDeviceAuthorization(req: {
     }
 
     // Verify staff user credentials (staff) or organizer credentials (manager)
-    const staffUser = db.staffUsers.findByEmail(staff_user_email);
-    const managerUser = staffUser ? null : mainDb.users.findByEmail(staff_user_email);
+    const staffUser =
+      db.staffUsers && db.staffUsers.findByEmail
+        ? db.staffUsers.findByEmail(staff_user_email)
+        : null;
+
+    const managerUser =
+      !staffUser && db.users && db.users.findByEmail
+        ? db.users.findByEmail(staff_user_email)
+        : null;
 
     let userId: string | null = null;
     let userName: string | undefined;
+    let loginType: 'staff' | 'manager' | null = null;
 
     if (staffUser && staffUser.active) {
-      const isPasswordValid = await bcrypt.compare(staff_user_password, staffUser.passwordHash);
+      // Staff login
+      const isPasswordValid = await bcrypt.compare(
+        staff_user_password,
+        staffUser.passwordHash
+      );
       if (!isPasswordValid) {
-        return new Response(JSON.stringify({ error: 'Invalid staff credentials' }), {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({ error: 'Invalid staff credentials' }),
+          {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       }
-      if (staffUser.organizerId && device.organizerId && staffUser.organizerId !== device.organizerId) {
+
+      if (
+        staffUser.organizerId &&
+        device.organizerId &&
+        staffUser.organizerId !== device.organizerId
+      ) {
         return new Response(
           JSON.stringify({ error: 'Device not assigned to this organizer' }),
           { status: 403, headers: { 'Content-Type': 'application/json' } }
         );
       }
-      if (device.staffUserId !== staffUser.id) {
+
+      if (device.staffUserId && device.staffUserId !== staffUser.id) {
         return new Response(
           JSON.stringify({ error: 'Device not assigned to this staff user' }),
           { status: 403, headers: { 'Content-Type': 'application/json' } }
         );
       }
+
       userId = staffUser.id;
       userName = staffUser.name;
-    } else if (managerUser && managerUser.role === 'manager' && managerUser.status === 'active') {
-      const isPasswordValid = await bcrypt.compare(staff_user_password, (managerUser as any).passwordHash);
+      loginType = 'staff';
+    } else if (
+      managerUser &&
+      managerUser.role === 'manager' &&
+      managerUser.status === 'active'
+    ) {
+      // Manager / organizer login
+      const isPasswordValid = await bcrypt.compare(
+        staff_user_password,
+        (managerUser as any).passwordHash
+      );
       if (!isPasswordValid) {
-        return new Response(JSON.stringify({ error: 'Invalid organizer credentials' }), {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({ error: 'Invalid organizer credentials' }),
+          {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       }
+
       if (device.organizerId && device.organizerId !== managerUser.id) {
         return new Response(
           JSON.stringify({ error: 'Device not assigned to this organizer' }),
           { status: 403, headers: { 'Content-Type': 'application/json' } }
         );
       }
+
       userId = managerUser.id;
       userName = managerUser.name;
+      loginType = 'manager';
     } else {
-      return new Response(JSON.stringify({ error: 'Invalid staff credentials' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ error: 'Invalid staff credentials' }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
-    // Extract IP address from request
-    const ip = req.ip || 'unknown';
+    // Extract IP address from request (fallbacks)
+    const ip =
+      req.ip ||
+      req.headers?.['x-forwarded-for']?.split(',')[0].trim() ||
+      'unknown';
 
     // Update device last seen info
     await db.devices.update(device.id, {
       lastSeenAt: new Date().toISOString(),
-      lastIp: ip
+      lastIp: ip,
     });
 
     // Create JWT token payload
     const tokenPayload = {
       sub: device.id,
       staff_user_id: userId,
-      device_public_id: device.devicePublicId
+      device_public_id: device.devicePublicId,
     };
 
     // Generate JWT token
@@ -132,10 +192,10 @@ export async function handleDeviceAuthorization(req: {
 
     // Create a record for the device token
     const deviceToken: DeviceToken = {
-      id: `dt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `dt-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
       deviceId: device.id,
       token: accessToken, // In a real app, you'd store a hashed version
-      expiresAt: new Date(Date.now() + (8 * 60 * 60 * 1000)).toISOString(), // 8 hours
+      expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(), // 8 hours
       revokedAt: null,
       createdAt: new Date().toISOString(),
     };
@@ -151,19 +211,21 @@ export async function handleDeviceAuthorization(req: {
         device: {
           id: device.id,
           device_public_id: device.devicePublicId,
-          staff_user_id: staffUser.id,
+          staff_user_id: userId, // <-- safe for both staff and manager logins
           eventId: device.eventId ?? null,
           event_id: device.eventId ?? null,
+          organizerId: device.organizerId ?? null,
         },
         staff_user: {
           id: userId,
           email: staff_user_email,
-          name: userName
-        }
+          name: userName,
+          type: loginType,
+        },
       }),
-      { 
+      {
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       }
     );
   } catch (error) {
@@ -190,11 +252,11 @@ export async function handleManagerCreateDevice(req: {
   const eventId = req.body?.eventId ?? null;
   const staffUserIdInput = req.body?.staffUserId ?? null;
   const devicePublicId = `dev-${Math.random().toString(36).slice(2, 10)}`;
-  const deviceSecret = `sec-${Math.random().toString(36).slice(2, 14)}`;
+  const deviceSecretPlain = `sec-${Math.random().toString(36).slice(2, 14)}`;
   const now = new Date().toISOString();
 
   if (eventId) {
-    const event = mainDb.events.findById(eventId);
+    const event = db.events.findById(eventId);
     if (!event || event.organizer.id !== req.user.id) {
       return new Response(JSON.stringify({ message: 'Event not found' }), {
         status: 404,
@@ -204,17 +266,26 @@ export async function handleManagerCreateDevice(req: {
   }
 
   try {
-    const { staffUserId } = resolveStaffUserForOrganizer(staffUserIdInput, req.user.id);
+    const { staffUserId } = resolveStaffUserForOrganizer(
+      staffUserIdInput,
+      req.user.id
+    );
 
-    const created = mainDb.devices.create({
+    const hashedSecret = await bcrypt.hash(deviceSecretPlain, 10);
+
+    const created = db.devices.create({
       id: `dev-${Date.now()}`,
       name,
       staffUserId,
       organizerId: req.user.id,
       eventId: eventId || undefined,
       devicePublicId,
-      deviceSecret,
+      deviceSecret: hashedSecret,
       isActive: true,
+      createdAt: now,
+      updatedAt: now,
+      lastSeenAt: null,
+      lastIp: null,
     });
 
     return new Response(
@@ -225,7 +296,6 @@ export async function handleManagerCreateDevice(req: {
           devicePublicId: created.devicePublicId,
           organizerId: created.organizerId,
           staffUserId: created.staffUserId,
-          // Return the event ID in both camelCase and snake_case for clients that expect either format
           eventId: created.eventId ?? null,
           event_id: created.eventId ?? null,
           lastSeenAt: created.lastSeenAt,
@@ -233,17 +303,17 @@ export async function handleManagerCreateDevice(req: {
           isActive: created.isActive,
           createdAt: created.createdAt ?? now,
         },
-        secret: deviceSecret,
+        secret: deviceSecretPlain,
       }),
       { status: 201, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Failed to create device';
-    return new Response(
-      JSON.stringify({ message }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ message }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
 
@@ -255,26 +325,28 @@ export async function handleManagerListDevices(req: { user: User | null }) {
     });
   }
 
-  const devices = mainDb.devices
-    .findAll?.()
-    ?.filter(
-      (d: any) => d.organizerId === req.user!.id || d.staffUserId === req.user!.id
-    )
-    .map((d: any) => ({
-      id: d.id,
-      name: d.name,
-      organizerId: d.organizerId,
-      staffUserId: d.staffUserId,
-      devicePublicId: d.devicePublicId,
-      eventId: d.eventId,
-      isActive: d.isActive,
-      lastSeenAt: d.lastSeenAt,
-      lastIp: d.lastIp,
-      createdAt: d.createdAt,
-      updatedAt: d.updatedAt,
-    }));
+  const devices =
+    db.devices
+      .findAll?.()
+      ?.filter(
+        (d: any) =>
+          d.organizerId === req.user!.id || d.staffUserId === req.user!.id
+      )
+      .map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        organizerId: d.organizerId,
+        staffUserId: d.staffUserId,
+        devicePublicId: d.devicePublicId,
+        eventId: d.eventId,
+        isActive: d.isActive,
+        lastSeenAt: d.lastSeenAt,
+        lastIp: d.lastIp,
+        createdAt: d.createdAt,
+        updatedAt: d.updatedAt,
+      })) ?? [];
 
-  return new Response(JSON.stringify({ devices: devices ?? [] }), {
+  return new Response(JSON.stringify({ devices }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
@@ -300,8 +372,13 @@ export async function handleManagerAssignDevice(req: {
     });
   }
 
-  const device = mainDb.devices.findById(deviceId);
-  if (!device || (device.organizerId && device.organizerId !== req.user.id && device.staffUserId !== req.user.id)) {
+  const device = db.devices.findById(deviceId);
+  if (
+    !device ||
+    (device.organizerId &&
+      device.organizerId !== req.user.id &&
+      device.staffUserId !== req.user.id)
+  ) {
     return new Response(JSON.stringify({ message: 'Device not found' }), {
       status: 404,
       headers: { 'Content-Type': 'application/json' },
@@ -312,7 +389,7 @@ export async function handleManagerAssignDevice(req: {
   const staffUserIdInput = req.body?.staffUserId ?? null;
 
   if (eventId) {
-    const event = mainDb.events.findById(eventId);
+    const event = db.events.findById(eventId);
     if (!event || event.organizer.id !== req.user.id) {
       return new Response(JSON.stringify({ message: 'Event not found' }), {
         status: 404,
@@ -324,20 +401,25 @@ export async function handleManagerAssignDevice(req: {
   let staffUserIdToAssign: string | undefined = device.staffUserId;
   try {
     const targetStaff = staffUserIdInput ?? device.staffUserId ?? req.user.id;
-    staffUserIdToAssign = resolveStaffUserForOrganizer(targetStaff, req.user.id).staffUserId;
+    staffUserIdToAssign = resolveStaffUserForOrganizer(
+      targetStaff,
+      req.user.id
+    ).staffUserId;
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Invalid staff user';
-    return new Response(
-      JSON.stringify({ message }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ message }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
-  const updated = mainDb.devices.update(deviceId, {
+  const updated = db.devices.update(deviceId, {
     eventId: eventId || undefined,
     staffUserId: staffUserIdToAssign,
+    updatedAt: new Date().toISOString(),
   });
+
   return new Response(JSON.stringify({ device: updated }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
@@ -345,11 +427,11 @@ export async function handleManagerAssignDevice(req: {
 }
 
 const revokeTokensForDevice = (deviceId: string) => {
-  const tokens = mainDb.deviceTokens.findByDeviceId(deviceId) ?? [];
+  const tokens = db.deviceTokens.findByDeviceId(deviceId) ?? [];
   tokens.forEach((token) => {
-    mainDb.deviceTokens.revoke(token.id);
+    db.deviceTokens.revoke(token.id);
   });
-  mainDb.deviceTokens.deleteByDeviceId(deviceId);
+  db.deviceTokens.deleteByDeviceId(deviceId);
 };
 
 export async function handleManagerUpdateDevice(req: {
@@ -372,8 +454,13 @@ export async function handleManagerUpdateDevice(req: {
     });
   }
 
-  const device = mainDb.devices.findById(deviceId);
-  if (!device || (device.organizerId && device.organizerId !== req.user.id && device.staffUserId !== req.user.id)) {
+  const device = db.devices.findById(deviceId);
+  if (
+    !device ||
+    (device.organizerId &&
+      device.organizerId !== req.user.id &&
+      device.staffUserId !== req.user.id)
+  ) {
     return new Response(JSON.stringify({ message: 'Device not found' }), {
       status: 404,
       headers: { 'Content-Type': 'application/json' },
@@ -388,7 +475,9 @@ export async function handleManagerUpdateDevice(req: {
     updates.name = req.body.name.trim();
   }
 
-  const updated = mainDb.devices.update(deviceId, updates);
+  updates.updatedAt = new Date().toISOString();
+
+  const updated = db.devices.update(deviceId, updates);
   if (updates.isActive === false) {
     revokeTokensForDevice(deviceId);
   }
@@ -418,18 +507,23 @@ export async function handleManagerRegenerateDeviceSecret(req: {
     });
   }
 
-  const device = mainDb.devices.findById(deviceId);
-  if (!device || (device.organizerId && device.organizerId !== req.user.id && device.staffUserId !== req.user.id)) {
+  const device = db.devices.findById(deviceId);
+  if (
+    !device ||
+    (device.organizerId &&
+      device.organizerId !== req.user.id &&
+      device.staffUserId !== req.user.id)
+  ) {
     return new Response(JSON.stringify({ message: 'Device not found' }), {
       status: 404,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  const newSecret = `sec-${Math.random().toString(36).slice(2, 14)}`;
-  const hashed = await bcrypt.hash(newSecret, 10);
+  const newSecretPlain = `sec-${Math.random().toString(36).slice(2, 14)}`;
+  const hashed = await bcrypt.hash(newSecretPlain, 10);
 
-  const updated = mainDb.devices.update(deviceId, {
+  const updated = db.devices.update(deviceId, {
     deviceSecret: hashed,
     updatedAt: new Date().toISOString(),
   });
@@ -439,7 +533,7 @@ export async function handleManagerRegenerateDeviceSecret(req: {
   return new Response(
     JSON.stringify({
       device: updated,
-      secret: newSecret,
+      secret: newSecretPlain,
     }),
     {
       status: 200,
@@ -467,8 +561,13 @@ export async function handleManagerDeleteDevice(req: {
     });
   }
 
-  const device = mainDb.devices.findById(deviceId);
-  if (!device || (device.organizerId && device.organizerId !== req.user.id && device.staffUserId !== req.user.id)) {
+  const device = db.devices.findById(deviceId);
+  if (
+    !device ||
+    (device.organizerId &&
+      device.organizerId !== req.user.id &&
+      device.staffUserId !== req.user.id)
+  ) {
     return new Response(JSON.stringify({ message: 'Device not found' }), {
       status: 404,
       headers: { 'Content-Type': 'application/json' },
@@ -476,7 +575,7 @@ export async function handleManagerDeleteDevice(req: {
   }
 
   revokeTokensForDevice(deviceId);
-  mainDb.devices.delete(deviceId);
+  db.devices.delete(deviceId);
 
   return new Response(JSON.stringify({ message: 'Device deleted' }), {
     status: 200,
@@ -486,10 +585,11 @@ export async function handleManagerDeleteDevice(req: {
 
 export async function handleDeviceLogout(req: any) {
   try {
-    // In this implementation, we assume the token is passed in the request
-    // In real implementation, this would be extracted from the authorization header
-    const token = req.headers?.authorization?.split(' ')[1];
-    
+    const authHeader = req.headers?.authorization || req.headers?.Authorization;
+    const token = typeof authHeader === 'string'
+      ? authHeader.split(' ')[1]
+      : undefined;
+
     if (!token) {
       return new Response(
         JSON.stringify({ error: 'Missing authorization token' }),
@@ -501,15 +601,15 @@ export async function handleDeviceLogout(req: any) {
     const tokenRecord = db.deviceTokens.findByToken(token);
     if (tokenRecord) {
       db.deviceTokens.update(tokenRecord.id, {
-        revokedAt: new Date().toISOString()
+        revokedAt: new Date().toISOString(),
       });
     }
 
     return new Response(
       JSON.stringify({ message: 'Device logged out successfully' }),
-      { 
+      {
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       }
     );
   } catch (error) {

@@ -188,6 +188,24 @@
       "senderName": "Admin User",
       "receiverId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
       "content": "Your event \"Jazz Night\" has been approved by Admin User and is now live on Vibely."
+    },
+    {
+      "id": "3ea14269-a8f8-4cf7-8a8f-96ba6e108fc4",
+      "timestamp": "2025-11-19T07:23:01.970Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "content": "Your event \"Food Feast Event\" has been approved by Admin User and is now live on Vibely."
+    },
+    {
+      "id": "4181d896-f3c7-4897-b2d7-a970e900c6c9",
+      "timestamp": "2025-11-19T16:43:42.075Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "content": "Your event \"Jazz Night\" has been approved by Admin User and is now live on Vibely."
     }
   ]
 }

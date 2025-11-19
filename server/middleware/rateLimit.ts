@@ -1,76 +1,86 @@
 import type { Request, Response, NextFunction } from 'express';
-import { db } from '../api/db';
 
-// Simple in-memory store for rate limiting (in production, use Redis or similar)
+// Simple in-memory store for rate limiting (acceptable for single-server setup)
 const rateLimitStore: { [key: string]: { count: number; resetTime: number } } = {};
 
 interface RateLimitOptions {
-  windowMs: number; // Window in milliseconds
-  max: number; // Max requests allowed in window
+  windowMs: number;
+  max: number;
   message?: string;
-  keyGenerator?: (req: Request) => string; // Function to generate key for rate limiting
+  keyGenerator?: (req: Request) => string;
 }
 
 export const rateLimit = (options: RateLimitOptions) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    // Generate key for rate limiting
-    const key = options.keyGenerator 
-      ? options.keyGenerator(req) 
+    const key = options.keyGenerator
+      ? options.keyGenerator(req)
       : `${req.ip}-${req.path}`;
-    
+
     const now = Date.now();
-    const windowEnd = now + options.windowMs;
-    
-    // Get or create entry for this key
+
     if (!rateLimitStore[key] || rateLimitStore[key].resetTime < now) {
-      // Reset the counter
       rateLimitStore[key] = {
         count: 1,
-        resetTime: windowEnd
+        resetTime: now + options.windowMs
       };
-      next();
-      return;
+      return next();
     }
-    
-    // Check if limit exceeded
+
     if (rateLimitStore[key].count >= options.max) {
-      res.status(429).json({
+      return res.status(429).json({
         error: options.message || 'Too many requests, please try again later.'
       });
-      return;
     }
-    
-    // Increment the counter
+
     rateLimitStore[key].count++;
-    next();
+    return next();
   };
 };
 
-// Specific rate limiters for our endpoints
+// -----------------------------
+//  DEVICE AUTH RATE LIMITER
+//  Production-safe configuration
+// -----------------------------
+
 export const deviceAuthRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5, // 5 attempts per minute
-  message: 'Too many authorization attempts, please try again later.',
+  windowMs: 30 * 1000,  // 30-second window
+  max: 20,              // Up to 20 attempts per device/IP in 30s (very safe)
+  message: 'Too many authorization attempts, please try again shortly.',
+
   keyGenerator: (req) => {
-    const devicePublicId = req.body?.device_public_id || 'unknown';
-    const ip = req.ip || 'unknown';
-    return `${ip}-${devicePublicId}-device-auth`;
+    const ip = req.ip || 'unknown-ip';
+    const devicePublicId =
+      req.body?.device_public_id ||
+      req.headers['x-device-id'] ||
+      req.headers['x-device-public-id'] ||
+      'no-device-id';
+
+    // If no device ID is supplied → limit by IP only (still safe)
+    if (devicePublicId === 'no-device-id') {
+      return `auth-ip-only-${ip}`;
+    }
+
+    // Normally limit by BOTH: device ID + IP
+    return `auth-${ip}-${devicePublicId}`;
   }
 });
 
+// -----------------------------
+//  TICKET SCAN RATE LIMITER
+// -----------------------------
+
 export const ticketScanRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 60, // 60 scans per minute per device
+  max: 120,            // 120 scans per minute per device/IP
   message: 'Too many scan requests, please slow down.',
+
   keyGenerator: (req) => {
-    // Extract device ID from token if possible
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      // In a real implementation, we'd decode the token to get the device ID
-      // For now, we'll use the IP address as a proxy
-      return `${req.ip}-device-scan`;
-    }
-    return `${req.ip}-device-scan`;
+    const ip = req.ip || 'unknown-ip';
+    const deviceHeader =
+      req.headers['x-device-id'] ||
+      req.headers['x-device-public-id'] ||
+      'device-unknown';
+
+    return `scan-${ip}-${deviceHeader}`;
   }
 });

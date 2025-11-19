@@ -77,6 +77,19 @@
       "tierId": "tier-1763462909451-sm1nv",
       "tierName": "General Admission",
       "scanTimestamp": "2025-11-18T14:51:57.364Z"
+    },
+    {
+      "ticketId": "tkt-1763537135046-e19p81",
+      "eventId": "evt-8989570f-396c-44a8-8afc-2b797d0b0d25",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "purchaseDate": "2025-11-19T07:25:35.046Z",
+      "status": "used",
+      "code": "tkt-1763537135046-e19p81",
+      "holderName": "Mufwaya Kaungu",
+      "holderEmail": "mufwaya@yahoo.com",
+      "tierId": "tier-1763536823344-y1vwd",
+      "tierName": "General Admission",
+      "scanTimestamp": "2025-11-19T16:38:37.965Z"
     }
   ]
 }

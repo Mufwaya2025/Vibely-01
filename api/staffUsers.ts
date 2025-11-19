@@ -2,7 +2,8 @@ import type { User } from '../types';
 import { db } from './db';
 
 const sanitizeStaffUser = (user: any) => {
-  const { passwordHash, ...rest } = user || {};
+  if (!user) return null;
+  const { passwordHash, ...rest } = user;
   return rest;
 };
 
@@ -14,16 +15,24 @@ export async function handleManagerListStaffUsers(req: { user: User | null }) {
     });
   }
 
-  const staffUsers =
-    db.staffUsers
-      .getAll?.()
-      ?.filter((u: any) => u.organizerId === req.user!.id)
-      ?.map(sanitizeStaffUser) ?? [];
+  try {
+    const all = db.staffUsers.getAll ? db.staffUsers.getAll() : [];
 
-  return new Response(JSON.stringify({ staffUsers }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+    const staffUsers = all
+      .filter((u: any) => u.organizerId === req.user.id)
+      .map(sanitizeStaffUser);
+
+    return new Response(JSON.stringify({ staffUsers }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (err) {
+    console.error('Error in handleManagerListStaffUsers:', err);
+    return new Response(JSON.stringify({ message: 'Failed to load staff users' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }
 
 export async function handleManagerCreateStaffUser(req: {
@@ -39,7 +48,7 @@ export async function handleManagerCreateStaffUser(req: {
 
   const name = req.body?.name?.trim() || '';
   const email = req.body?.email?.trim().toLowerCase() || '';
-  const password = req.body?.password ?? '';
+  const password = req.body?.password || '';
 
   if (!email || !password) {
     return new Response(JSON.stringify({ message: 'Email and password are required' }), {
@@ -69,6 +78,7 @@ export async function handleManagerCreateStaffUser(req: {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    console.error('Error creating staff user:', error);
     const message = error instanceof Error ? error.message : 'Failed to create staff user';
     return new Response(JSON.stringify({ message }), {
       status: 400,
