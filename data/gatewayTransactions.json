@@ -1649,6 +1649,32 @@
       "id": "txn_8a4a7f98-a5a1-47d4-92d8-71e7b240ec72",
       "createdAt": "2025-11-19T16:52:57.840Z",
       "updatedAt": "2025-11-19T16:52:57.840Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1763576178709-gshejo",
+      "purpose": "ticket",
+      "eventId": "evt-36048ac8-4159-4624-ba3b-f8a3c31dff39",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 2,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Jazz Night",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1763570493724-2yv0l",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Jazz Night (General Admission)"
+      },
+      "id": "txn_ddfec7a7-8e9b-43b6-9f59-21671b4d8d70",
+      "createdAt": "2025-11-19T18:16:18.733Z",
+      "updatedAt": "2025-11-19T18:16:18.733Z"
     }
   ]
 }

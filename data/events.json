@@ -92,6 +92,117 @@
         "name": "Mufwaya Kaungu"
       },
       "id": "evt-36048ac8-4159-4624-ba3b-f8a3c31dff39"
+    },
+    {
+      "id": "evt-cb09b0ea-0a9f-4603-8c92-e6ce61291f8b",
+      "title": "Food Market",
+      "description": "Outdoor afternoon market with chef pop-ups, craft drinks, and live DJ sets.",
+      "date": "2025-12-06T12:00:00.000Z",
+      "location": "Arcades Shopping Mall, Lusaka, Zambia",
+      "latitude": -15.4067,
+      "longitude": 28.3308,
+      "price": 5,
+      "category": "Food",
+      "imageUrl": "https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=900&q=80",
+      "organizer": {
+        "id": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+        "name": "Zed Street Foods"
+      },
+      "reviewCount": 0,
+      "averageRating": 0,
+      "ticketQuantity": 300,
+      "ticketsSold": 0,
+      "status": "published",
+      "flagCount": 0,
+      "isFeatured": false,
+      "ticketTiers": [
+        {
+          "id": "tier-cb09-general",
+          "name": "General Admission",
+          "price": 5,
+          "quantity": 250
+        },
+        {
+          "id": "tier-cb09-vip",
+          "name": "Chef Table",
+          "price": 15,
+          "quantity": 50
+        }
+      ]
+    },
+    {
+      "id": "evt-e6514a52-7be2-45b2-b9b0-9a5429c7f8df",
+      "title": "Test Event",
+      "description": "Intimate acoustic showcase and networking session for emerging Lusaka artists.",
+      "date": "2025-12-12T17:30:00.000Z",
+      "location": "Mulungushi International Conference Centre, Lusaka, Zambia",
+      "latitude": -15.4081,
+      "longitude": 28.3291,
+      "price": 1,
+      "category": "Music",
+      "imageUrl": "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80",
+      "organizer": {
+        "id": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "name": "Mufwaya Kaungu"
+      },
+      "reviewCount": 0,
+      "averageRating": 0,
+      "ticketQuantity": 120,
+      "ticketsSold": 0,
+      "status": "published",
+      "flagCount": 0,
+      "isFeatured": false,
+      "ticketTiers": [
+        {
+          "id": "tier-1762793630472-xaigp",
+          "name": "General Admission",
+          "price": 1,
+          "quantity": 100
+        },
+        {
+          "id": "tier-e6514-vip",
+          "name": "VIP Sofa",
+          "price": 3,
+          "quantity": 20
+        }
+      ]
+    },
+    {
+      "id": "evt-52da7333-f0f3-4ed1-ae07-c2cc596f9f98",
+      "title": "Test",
+      "description": "Community open-mic and product feedback night used for exercising the check-in flow.",
+      "date": "2025-12-18T18:00:00.000Z",
+      "location": "Roma Gardens, Lusaka, Zambia",
+      "latitude": -15.3892,
+      "longitude": 28.3176,
+      "price": 1,
+      "category": "Community",
+      "imageUrl": "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80",
+      "organizer": {
+        "id": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "name": "Mufwaya Kaungu"
+      },
+      "reviewCount": 0,
+      "averageRating": 0,
+      "ticketQuantity": 140,
+      "ticketsSold": 0,
+      "status": "published",
+      "flagCount": 0,
+      "isFeatured": false,
+      "ticketTiers": [
+        {
+          "id": "tier-1763449014883-pcpwe",
+          "name": "General Admission",
+          "price": 1,
+          "quantity": 100
+        },
+        {
+          "id": "tier-52da-supporter",
+          "name": "Supporter",
+          "price": 2,
+          "quantity": 40
+        }
+      ]
     }
   ]
 }

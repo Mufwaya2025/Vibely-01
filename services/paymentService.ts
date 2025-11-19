@@ -180,11 +180,105 @@ export const processPayment = async (
       }
     };
 
+    const checkoutConfig = {
+      key: session.publicKey,
+      reference: session.reference,
+      email: session.email,
+      amount: session.amount,
+      currency: session.currency,
+      channels: session.channels.length > 0 ? session.channels : ['card', 'mobile-money'],
+      label: session.label,
+      customer: session.customer,
+    };
+
+    const launchBridgeCheckout = () => {
+      const features =
+        'width=460,height=720,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes';
+      const bridgeWindow = window.open('/lenco-bridge.html', 'vibelyLencoCheckout', features);
+      if (!bridgeWindow) {
+        finishError('Please allow pop-ups to continue with payment.', { removePending: true });
+        return;
+      }
+
+      const payload = {
+        origin: window.location.origin,
+        returnOrigin: window.location.origin,
+        session: checkoutConfig,
+      };
+
+      let bridgeClosed = false;
+      const sendInit = () => {
+        if (!bridgeWindow || bridgeWindow.closed) return;
+        try {
+          bridgeWindow.postMessage({ type: 'lenco:init', payload }, window.location.origin);
+        } catch {
+          bridgeWindow.postMessage({ type: 'lenco:init', payload }, '*');
+        }
+      };
+
+      const cleanupBridge = (shouldClose?: boolean) => {
+        bridgeClosed = true;
+        window.removeEventListener('message', handleBridgeMessage);
+        window.clearInterval(closeWatcher);
+        window.clearTimeout(initRetry);
+        if (shouldClose && bridgeWindow && !bridgeWindow.closed) {
+          bridgeWindow.close();
+        }
+      };
+
+      const handleBridgeMessage = (event: MessageEvent) => {
+        if (!event.data || event.data.source !== 'lenco-bridge' || bridgeClosed) {
+          return;
+        }
+        const payloadData = event.data.payload;
+        if (!payloadData) {
+          return;
+        }
+        switch (payloadData.type) {
+          case 'bridge:booted':
+          case 'bridge:ready':
+            sendInit();
+            break;
+          case 'callback:success':
+          case 'callback:confirmation-pending':
+            cleanupBridge(true);
+            handleVerification();
+            break;
+          case 'callback:close':
+          case 'lenco:close':
+          case 'bridge:closed':
+            cleanupBridge();
+            finishError('Payment window was closed before completion.', { removePending: true });
+            break;
+          default:
+            break;
+        }
+      };
+
+      window.addEventListener('message', handleBridgeMessage);
+
+      const closeWatcher = window.setInterval(() => {
+        if (!bridgeWindow || bridgeWindow.closed) {
+          cleanupBridge();
+          finishError('Payment window was closed before completion.', { removePending: true });
+        }
+      }, 1000);
+
+      const initRetry = window.setTimeout(() => {
+        if (!bridgeClosed) {
+          sendInit();
+        }
+      }, 500);
+
+      sendInit();
+    };
+
     const launchCheckout = async () => {
       try {
         await ensureLencoWidget(session.widgetUrl);
       } catch (err) {
-        finishError(err instanceof Error ? err.message : 'Failed to load the Lenco checkout widget.');
+        console.warn('Failed to load inline Lenco widget, falling back to bridge.', err);
+        launchBridgeCheckout();
         return;
       }
 
@@ -196,22 +290,19 @@ export const processPayment = async (
         return;
       }
 
-      const lenco = (window as Window & { LencoPay?: { getPaid: (config: Record<string, unknown>) => void } }).LencoPay;
+      const lenco = (window as Window & {
+        LencoPay?: { getPaid: (config: Record<string, unknown>) => void };
+      }).LencoPay;
+
       if (!lenco || typeof lenco.getPaid !== 'function') {
-        finishError('Lenco checkout is not available. Please try again.', { removePending: true });
+        console.warn('Inline Lenco widget unavailable, using bridge window instead.');
+        launchBridgeCheckout();
         return;
       }
 
       try {
         lenco.getPaid({
-          key: session.publicKey,
-          reference: session.reference,
-          email: session.email,
-          amount: session.amount,
-          currency: session.currency,
-          channels: session.channels.length > 0 ? session.channels : ['card', 'mobile-money'],
-          label: session.label,
-          customer: session.customer,
+          ...checkoutConfig,
           onSuccess: () => {
             handleVerification();
           },
@@ -223,10 +314,8 @@ export const processPayment = async (
           },
         });
       } catch (error) {
-        finishError(
-          error instanceof Error ? error.message : 'Unable to launch Lenco checkout.',
-          { removePending: true }
-        );
+        console.warn('Inline Lenco checkout failed, using bridge window.', error);
+        launchBridgeCheckout();
       }
     };
 
