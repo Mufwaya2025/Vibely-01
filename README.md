@@ -10,7 +10,7 @@ Set up a .env file based on .env.example before running the app.
 - LENCO_PUBLIC_KEY - Lenco publishable key used by the inline checkout widget.
 - LENCO_SECRET_KEY - Lenco secret/API token used on the server for verification, payouts, and webhooks.
 - LENCO_API_BASE - Lenco API base URL (defaults to https://api.lenco.co/access/v2 when unset).
-- LENCO_WIDGET_URL / VITE_LENCO_WIDGET_URL - Inline widget script URL (defaults to https://pay.lenco.co/js/v1/inline.js when unset).
+- LENCO_WIDGET_URL / VITE_LENCO_WIDGET_URL - Inline widget script URL (defaults to `/lenco-inline.js` in production; sandbox/development still use Lenco’s sandbox URL unless you override).
 - LENCO_WITHDRAW_SOURCE_ACCOUNT_ID - Optional source account used when triggering payouts via the API.
 - LENCO_ENV - Optional override (`sandbox` or `production`). Defaults to `production`; set to `sandbox` for testing.
 - VITE_API_BASE_URL - URL of the Express backend (http://localhost:4000 in local dev).
