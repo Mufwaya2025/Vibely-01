@@ -191,94 +191,19 @@ export const processPayment = async (
       customer: session.customer,
     };
 
-    const launchBridgeCheckout = () => {
-      const features =
-        'width=460,height=720,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes';
-      const bridgeWindow = window.open('/lenco-bridge.html', 'vibelyLencoCheckout', features);
-      if (!bridgeWindow) {
-        finishError('Please allow pop-ups to continue with payment.', { removePending: true });
-        return;
-      }
-
-      const payload = {
-        origin: window.location.origin,
-        returnOrigin: window.location.origin,
-        session: checkoutConfig,
-      };
-
-      let bridgeClosed = false;
-      const sendInit = () => {
-        if (!bridgeWindow || bridgeWindow.closed) return;
-        try {
-          bridgeWindow.postMessage({ type: 'lenco:init', payload }, window.location.origin);
-        } catch {
-          bridgeWindow.postMessage({ type: 'lenco:init', payload }, '*');
-        }
-      };
-
-      const cleanupBridge = (shouldClose?: boolean) => {
-        bridgeClosed = true;
-        window.removeEventListener('message', handleBridgeMessage);
-        window.clearInterval(closeWatcher);
-        window.clearTimeout(initRetry);
-        if (shouldClose && bridgeWindow && !bridgeWindow.closed) {
-          bridgeWindow.close();
-        }
-      };
-
-      const handleBridgeMessage = (event: MessageEvent) => {
-        if (!event.data || event.data.source !== 'lenco-bridge' || bridgeClosed) {
-          return;
-        }
-        const payloadData = event.data.payload;
-        if (!payloadData) {
-          return;
-        }
-        switch (payloadData.type) {
-          case 'bridge:booted':
-          case 'bridge:ready':
-            sendInit();
-            break;
-          case 'callback:success':
-          case 'callback:confirmation-pending':
-            cleanupBridge(true);
-            handleVerification();
-            break;
-          case 'callback:close':
-          case 'lenco:close':
-          case 'bridge:closed':
-            cleanupBridge();
-            finishError('Payment window was closed before completion.', { removePending: true });
-            break;
-          default:
-            break;
-        }
-      };
-
-      window.addEventListener('message', handleBridgeMessage);
-
-      const closeWatcher = window.setInterval(() => {
-        if (!bridgeWindow || bridgeWindow.closed) {
-          cleanupBridge();
-          finishError('Payment window was closed before completion.', { removePending: true });
-        }
-      }, 1000);
-
-      const initRetry = window.setTimeout(() => {
-        if (!bridgeClosed) {
-          sendInit();
-        }
-      }, 500);
-
-      sendInit();
+    const abortCheckout = (reason: string, error?: unknown) => {
+      console.error(reason, error);
+      finishError(
+        `${reason} Please refresh the page, disable popup/trackers for pay.lenco.co, and try again.`,
+        { removePending: true }
+      );
     };
 
     const launchCheckout = async () => {
       try {
         await ensureLencoWidget(session.widgetUrl);
       } catch (err) {
-        console.warn('Failed to load inline Lenco widget, falling back to bridge.', err);
-        launchBridgeCheckout();
+        abortCheckout('Failed to load the secure Lenco checkout widget.', err);
         return;
       }
 
@@ -295,8 +220,7 @@ export const processPayment = async (
       }).LencoPay;
 
       if (!lenco || typeof lenco.getPaid !== 'function') {
-        console.warn('Inline Lenco widget unavailable, using bridge window instead.');
-        launchBridgeCheckout();
+        abortCheckout('Lenco checkout was not detected on this page.');
         return;
       }
 
@@ -314,8 +238,7 @@ export const processPayment = async (
           },
         });
       } catch (error) {
-        console.warn('Inline Lenco checkout failed, using bridge window.', error);
-        launchBridgeCheckout();
+        abortCheckout('Failed to open the secure Lenco checkout.', error);
       }
     };
 
