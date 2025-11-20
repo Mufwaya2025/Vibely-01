@@ -81,8 +81,9 @@ const lencoApiOrigins = unique([
   resolveOrigin(lencoConfig.apiBase),
 ]);
 
-// Set Content Security Policy header for security (disabled in production; Nginx owns CSP there)
-if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_NODE_CSP === 'true') {
+// Set Content Security Policy header for security in development only.
+// In production, Nginx is the single source of truth for CSP to avoid conflicts.
+if (process.env.NODE_ENV !== 'production') {
   app.use((_req, res, next) => {
     const connectSources = [
       "'self'",
