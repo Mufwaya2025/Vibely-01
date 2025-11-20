@@ -101,6 +101,9 @@ app.use((_req, res, next) => {
     'https://*.tawk.to',
     'https://pay.lenco.co',
     'https://static.cloudflareinsights.com',
+    'https://static.cloudflare.com',
+    'https://cdnjs.cloudflare.com',
+    'https://*.cloudflare.com',
     'wss://vibelyapp.live',
     'wss:',
     'ws:',
@@ -123,6 +126,8 @@ app.use((_req, res, next) => {
     'https://va.tawk.to',
     'https://*.tawk.to',
     'https://static.cloudflareinsights.com',
+    'https://cdnjs.cloudflare.com',
+    'https://*.cloudflare.com',
     ...lencoWidgetOrigins,
   ].join(' ');
 
