@@ -1,5 +1,5 @@
 import { db } from './db';
-import { Event, AnalysisData } from '../types';
+import { Event, AnalysisData, EventCategory } from '../types';
 
 /**
  * Fetches analytics data for a specific user's events.
@@ -160,7 +160,7 @@ function getSalesByDay(tickets: any[]): { date: string; tickets: number }[] {
 }
 
 // Helper function to get sales by category
-function getSalesByCategory(events: Event[], tickets: any[]): { category: string; tickets: number }[] {
+function getSalesByCategory(events: Event[], tickets: any[]): { category: EventCategory; tickets: number }[] {
   const categorySales: Record<string, number> = {};
   
   events.forEach(event => {
@@ -175,7 +175,7 @@ function getSalesByCategory(events: Event[], tickets: any[]): { category: string
   });
 
   return Object.entries(categorySales).map(([category, tickets]) => ({ 
-    category: category as any, 
+    category: category as EventCategory, 
     tickets 
   }));
 }

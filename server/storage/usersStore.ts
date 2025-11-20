@@ -29,7 +29,7 @@ const seedUsers = (): StoredUser[] =>
     ...user,
     passwordHash: bcrypt.hashSync(DEFAULT_PASSWORD, DEFAULT_HASH_ROUNDS),
     subscriptionTier: user.subscriptionTier ?? 'Regular',
-    authProviders: ['local'],
+    authProviders: (['local'] as AuthProvider[]),
   }));
 
 let cache: StoredUser[] | null = null;
@@ -62,7 +62,7 @@ const loadFromDisk = (): StoredUser[] => {
       ...user,
       passwordHash: user.passwordHash ?? bcrypt.hashSync(DEFAULT_PASSWORD, DEFAULT_HASH_ROUNDS),
       subscriptionTier: user.subscriptionTier ?? 'Regular',
-      authProviders: user.authProviders && user.authProviders.length > 0 ? user.authProviders : ['local'],
+      authProviders: user.authProviders && user.authProviders.length > 0 ? user.authProviders : (['local'] as AuthProvider[]),
     }));
   } catch (err) {
     console.error('Failed to load users.json, recreating from seed.', err);
@@ -149,7 +149,7 @@ export const usersStore = {
       attendedEvents: data.attendedEvents ?? [],
       subscriptionTier: data.subscriptionTier ?? 'Regular',
       subscriptionExpiresAt: data.subscriptionExpiresAt,
-      authProviders: data.authProviders && data.authProviders.length > 0 ? data.authProviders : ['local'],
+      authProviders: data.authProviders && data.authProviders.length > 0 ? data.authProviders : (['local'] as AuthProvider[]),
     };
 
     const users = getCache();
@@ -212,11 +212,11 @@ export const usersStore = {
 
     const providers = users[index].authProviders.includes('local')
       ? users[index].authProviders
-      : [...users[index].authProviders, 'local'];
+      : ([...users[index].authProviders, 'local'] as AuthProvider[]);
 
     const updated = this.update(id, {
       passwordHash: this.hashPassword(DEFAULT_PASSWORD),
-      authProviders: providers,
+      authProviders: providers as AuthProvider[],
     });
 
     return toPublic(updated);
@@ -247,3 +247,5 @@ export const usersStore = {
     return bcrypt.hashSync(plainPassword, DEFAULT_HASH_ROUNDS);
   },
 };
+
+

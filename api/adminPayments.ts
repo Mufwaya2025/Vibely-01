@@ -3,7 +3,9 @@ import { requireAdmin } from './utils/auth';
 import { decryptSecret } from '../utils/encryption';
 import { User, GatewayTransactionStatus } from '../types';
 import { isLencoConfigured, lencoConfig } from '../server/config/lencoConfig';
-import { createTransfer, LencoClientError } from '../server/services/lencoClient';
+import { createTransfer, LencoClientError, createReference } from '../server/services/lencoClient';
+// Keep provider label consistent with other payment flows
+const PAYMENT_PROVIDER = 'Lenco';
 
 interface AdminRequest<T = any> {
   user: User | null;
@@ -90,7 +92,7 @@ export async function handleAdminGetTransactions(req: AdminRequest) {
       matches =
         matches &&
         (txn.externalId.toLowerCase().includes(lowered) ||
-          txn.eventId.toLowerCase().includes(lowered) ||
+          (txn.eventId ?? '').toLowerCase().includes(lowered) ||
           (txn.paymentMethod ?? '').toLowerCase().includes(lowered));
     }
     if (dateFrom) {
@@ -295,7 +297,9 @@ const computePlatformFinancials = () => {
 
   const platformRevenue = platformFees + subscriptionRevenue;
 
-  const platformPayouts = transactions.filter((txn) => txn.purpose === 'platform_payout');
+  const platformPayouts = transactions.filter(
+    (txn) => txn.purpose === 'payout' && txn.metadata?.platformWithdrawal === true
+  );
   const withdrawn = platformPayouts
     .filter((txn) => txn.status === 'succeeded')
     .reduce(
@@ -636,7 +640,7 @@ export async function handleAdminCreatePlatformPayout(
   const payoutTxn = db.gatewayTransactions.create({
     externalId: reference,
     reference,
-    purpose: 'platform_payout',
+    purpose: 'payout',
     userId: 'platform',
     organizerId: undefined,
     amount,
@@ -681,3 +685,7 @@ export async function handleAdminCreatePlatformPayout(
     payoutStatus === 'succeeded' ? 200 : 502
   );
 }
+
+
+
+

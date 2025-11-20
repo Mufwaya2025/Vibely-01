@@ -6,7 +6,6 @@ import {
   RevenueTrendPoint,
   RevenueTrendResponse,
   FunnelMetrics,
-  RefundCase,
   RefundStatus,
   User,
 } from '../types';
@@ -77,7 +76,7 @@ export async function handleAdminGetRevenueTrends(req: AdminRequest) {
     const createdAt = new Date(txn.createdAt);
     if (createdAt < start || createdAt > now) continue;
 
-    const event = eventMap.get(txn.eventId);
+    const event = txn.eventId ? eventMap.get(txn.eventId) : undefined;
     if (!matchesFilters(event, category, organizerId)) continue;
     if (txn.status === 'failed' || txn.status === 'pending') continue;
 
@@ -130,7 +129,8 @@ export async function handleAdminGetFunnelMetrics(req: AdminRequest) {
   const filteredEvents = events.filter((event) => matchesFilters(event, category, organizerId));
   const transactions = db.gatewayTransactions.findAll().filter((txn) => {
     if (txn.status !== 'succeeded') return false;
-    return matchesFilters(eventMap.get(txn.eventId), category, organizerId);
+    const ev = txn.eventId ? eventMap.get(txn.eventId) : undefined;
+    return matchesFilters(ev, category, organizerId);
   });
 
   const days = RANGE_TO_DAYS[range];

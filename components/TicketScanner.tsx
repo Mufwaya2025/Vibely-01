@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import QrScanner from 'qr-scanner';
+import type QrScanner from 'qr-scanner';
 import { scanTicket, TicketScanError } from '../services/ticketService';
 
 interface TicketScannerProps {
@@ -30,7 +30,14 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ eventId, onClose, onTicke
   const [cameraError, setCameraError] = useState<string | null>(null);
 
   const stopScanner = useCallback(() => {
-    scannerRef.current?.stop();
+    try {
+      // Prefer a full destroy to release resources
+      // @ts-ignore destroy exists on qr-scanner instances
+      scannerRef.current?.destroy?.();
+    } catch {
+      // Fallback to stop if destroy isn't available for any reason
+      scannerRef.current?.stop();
+    }
     scannerRef.current = null;
 
     if (streamRef.current) {
@@ -97,7 +104,14 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ eventId, onClose, onTicke
       streamRef.current = stream;
       videoRef.current.srcObject = stream;
 
-      const scanner = new QrScanner(
+      // Lazy-load qr-scanner to avoid dev import resolution hiccups
+      const { default: QrScannerLib } = await import('qr-scanner');
+      try {
+        // @ts-expect-error WORKER_PATH exists as a deprecated setter in qr-scanner types
+        QrScannerLib.WORKER_PATH = new URL('qr-scanner/qr-scanner-worker.min.js', import.meta.url).toString();
+      } catch {}
+
+      const scanner = new QrScannerLib(
         videoRef.current,
         (result) => {
           if (result?.data) {

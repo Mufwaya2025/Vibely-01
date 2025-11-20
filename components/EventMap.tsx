@@ -90,22 +90,30 @@ const EventMap: React.FC<EventMapProps> = ({
    * For this diagnostic version, we are NOT filtering by distance — we want to see *something*.
    */
   const eventsWithCoords = useMemo(() => {
-    console.log('[EventMap] Total events received:', events.length);
-    console.log('[EventMap] Raw events data:', events);
+    if (import.meta.env.DEV) {
+      console.log('[EventMap] Total events received:', events.length);
+      console.log('[EventMap] Raw events data:', events);
+    }
     
     const result: Array<{ event: Event; lat: number; lon: number }> = [];
 
     events.forEach((ev, idx) => {
       const coords = extractCoords(ev);
       if (!coords) {
-        console.warn(`[EventMap] Event ${idx} "${ev?.title || 'Unknown'}" has NO valid coords. Event data:`, ev);
+        if (import.meta.env.DEV) {
+          console.warn(`[EventMap] Event ${idx} "${ev?.title || 'Unknown'}" has NO valid coords. Event data:`, ev);
+        }
         return;
       }
-      console.log(`[EventMap] Event ${idx} "${ev.title}" HAS coords:`, coords);
+      if (import.meta.env.DEV) {
+        console.log(`[EventMap] Event ${idx} "${ev.title}" HAS coords:`, coords);
+      }
       result.push({ event: ev, lat: coords.lat, lon: coords.lon });
     });
 
-    console.log('[EventMap] Final parsed events with coords:', result.length, result);
+    if (import.meta.env.DEV) {
+      console.log('[EventMap] Final parsed events with coords:', result.length, result);
+    }
     return result;
   }, [events]);
 
@@ -241,10 +249,14 @@ const EventMap: React.FC<EventMapProps> = ({
       }
     }
 
-    console.log('[EventMap] Drawing markers for:', eventsWithCoords.length, 'events');
+    if (import.meta.env.DEV) {
+      console.log('[EventMap] Drawing markers for:', eventsWithCoords.length, 'events');
+    }
     
     eventsWithCoords.forEach(({ event, lat, lon }, idx) => {
-      console.log(`[EventMap] Creating marker ${idx} at [${lat}, ${lon}] for "${event.title}"`);
+      if (import.meta.env.DEV) {
+        console.log(`[EventMap] Creating marker ${idx} at [${lat}, ${lon}] for "${event.title}"`);
+      }
       const marker = L.marker([lat, lon], { icon: EVENT_MARKER_ICON }).addTo(markersRef.current!);
 
       bounds.extend([lat, lon]);

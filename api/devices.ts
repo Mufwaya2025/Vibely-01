@@ -196,8 +196,8 @@ export async function handleDeviceAuthorization(req: {
       deviceId: device.id,
       token: accessToken, // In a real app, you'd store a hashed version
       expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(), // 8 hours
-      revokedAt: null,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     // Save the token
@@ -271,8 +271,6 @@ export async function handleManagerCreateDevice(req: {
       req.user.id
     );
 
-    const hashedSecret = await bcrypt.hash(deviceSecretPlain, 10);
-
     const created = db.devices.create({
       id: `dev-${Date.now()}`,
       name,
@@ -280,12 +278,9 @@ export async function handleManagerCreateDevice(req: {
       organizerId: req.user.id,
       eventId: eventId || undefined,
       devicePublicId,
-      deviceSecret: hashedSecret,
+      // Pass plaintext; store will hash
+      deviceSecret: deviceSecretPlain,
       isActive: true,
-      createdAt: now,
-      updatedAt: now,
-      lastSeenAt: null,
-      lastIp: null,
     });
 
     return new Response(

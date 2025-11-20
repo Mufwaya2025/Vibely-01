@@ -2,9 +2,11 @@ import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import { deviceAuthDb as deviceDb } from '../../api/deviceAuthDb';
 
-// Load JWT secret from environment
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_jwt_secret_for_dev';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
+// Load JWT secret from environment; require in production
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET is required in production');
+}
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_only_secret';
 
 // Device token payload interface
 interface DeviceTokenPayload {
@@ -34,6 +36,32 @@ export const verifyDeviceToken = (token: string): DeviceTokenPayload | null => {
     return decoded;
   } catch (error) {
     console.error('Token verification failed:', error);
+    return null;
+  }
+};
+
+// User token helpers for browser/API authentication
+interface UserTokenPayload {
+  sub: string; // user_id
+  role: string;
+  status: string;
+  exp: number;
+  iat: number;
+}
+
+export const createUserToken = (payload: Omit<UserTokenPayload, 'exp' | 'iat'>): string => {
+  const tokenPayload: UserTokenPayload = {
+    ...payload,
+    exp: Math.floor(Date.now() / 1000) + (8 * 60 * 60),
+    iat: Math.floor(Date.now() / 1000),
+  };
+  return jwt.sign(tokenPayload, JWT_SECRET);
+};
+
+export const verifyUserToken = (token: string): UserTokenPayload | null => {
+  try {
+    return jwt.verify(token, JWT_SECRET) as UserTokenPayload;
+  } catch {
     return null;
   }
 };

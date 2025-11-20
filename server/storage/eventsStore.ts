@@ -54,7 +54,7 @@ const loadFromDisk = (): StoredEvent[] => {
   if (!fs.existsSync(DATA_FILE)) {
     // Seed with mock events if file doesn't exist
     const seeded = MOCK_EVENTS.map(event => ({ ...event }));
-    const { events, changed } = normalizeEvents(seeded);
+    const { events } = normalizeEvents(seeded);
     fs.writeFileSync(
       DATA_FILE,
       JSON.stringify({ events }, null, 2),
@@ -163,3 +163,4 @@ export const eventsStore = {
     return true;
   },
 };
+

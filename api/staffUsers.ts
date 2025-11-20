@@ -19,7 +19,7 @@ export async function handleManagerListStaffUsers(req: { user: User | null }) {
     const all = db.staffUsers.getAll ? db.staffUsers.getAll() : [];
 
     const staffUsers = all
-      .filter((u: any) => u.organizerId === req.user.id)
+      .filter((u: any) => u.organizerId === req.user!.id)
       .map(sanitizeStaffUser);
 
     return new Response(JSON.stringify({ staffUsers }), {

@@ -16,14 +16,18 @@ const app = express();
 const httpServer = createServer(app);
 
 const port = parseInt(process.env.PORT ?? '4000', 10);
-const clientOrigin = process.env.CLIENT_ORIGIN ?? '*';
+const clientOrigin = process.env.CLIENT_ORIGIN ?? '';
 const jsonLimit = process.env.JSON_BODY_LIMIT ?? '1mb';
 
 const allowedOrigins = clientOrigin
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
-const allowAnyOrigin = allowedOrigins.length === 0 || allowedOrigins.includes('*');
+const allowAnyOrigin = allowedOrigins.length === 0;
+if (process.env.NODE_ENV === 'production' && allowAnyOrigin) {
+  console.error('[server] CLIENT_ORIGIN is required in production');
+  process.exit(1);
+}
 const allowedOriginsSet = new Set(allowedOrigins);
 
 const isLocalhostOrigin = (origin: string | undefined): origin is string => {
@@ -39,19 +43,17 @@ const isLocalhostOrigin = (origin: string | undefined): origin is string => {
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (allowAnyOrigin || !origin) {
-        callback(null, true);
-        return;
-      }
-      if (allowedOriginsSet.has(origin) || isLocalhostOrigin(origin)) {
-        callback(null, origin);
-        return;
-      }
-      callback(null, false);
+      // Allow same-origin or server-to-server calls (no origin)
+      if (!origin) return callback(null, true);
+      if (allowedOriginsSet.has(origin)) return callback(null, true);
+      if (process.env.NODE_ENV !== 'production' && isLocalhostOrigin(origin)) return callback(null, true);
+      return callback(null, false);
     },
-    credentials: !allowAnyOrigin,
+    credentials: true,
   })
 );
+// Raw body for payment webhooks (must be before express.json)
+app.use('/api/webhooks', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: jsonLimit }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -79,83 +81,83 @@ const lencoApiOrigins = unique([
   resolveOrigin(lencoConfig.apiBase),
 ]);
 
-// Set Content Security Policy header for security
-app.use((_req, res, next) => {
-  const connectSources = [
-    "'self'",
-    'https://vibelyapp.live:4000',
-    'http://localhost:4000',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'https://fonts.googleapis.com',
-    'https://fonts.gstatic.com',
-    'https://accounts.google.com',
-    'https://www.gstatic.com',
-    ...lencoWidgetOrigins,
-    ...lencoApiOrigins,
-    'https://tile.openstreetmap.org',
-    'https://*.tile.openstreetmap.org',
-    'https://www.openstreetmap.org',
-    'https://embed.tawk.to',
-    'https://tawk.to',
-    'https://*.tawk.to',
-    'https://pay.lenco.co',
-    'https://static.cloudflareinsights.com',
-    'https://static.cloudflare.com',
-    'https://cdnjs.cloudflare.com',
-    'https://*.cloudflare.com',
-    'wss://vibelyapp.live',
-    'wss:',
-    'ws:',
-  ].join(' ');
+// Set Content Security Policy header for security (disabled in production; Nginx owns CSP there)
+if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_NODE_CSP === 'true') {
+  app.use((_req, res, next) => {
+    const connectSources = [
+      "'self'",
+      'https://vibelyapp.live:4000',
+      'http://localhost:4000',
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://fonts.googleapis.com',
+      'https://fonts.gstatic.com',
+      'https://accounts.google.com',
+      'https://www.gstatic.com',
+      ...lencoWidgetOrigins,
+      ...lencoApiOrigins,
+      'https://tile.openstreetmap.org',
+      'https://*.tile.openstreetmap.org',
+      'https://www.openstreetmap.org',
+      'https://embed.tawk.to',
+      'https://tawk.to',
+      'https://*.tawk.to',
+      'https://pay.lenco.co',
+      'https://static.cloudflareinsights.com',
+      'https://static.cloudflare.com',
+      'https://cdnjs.cloudflare.com',
+      'https://*.cloudflare.com',
+      'wss://vibelyapp.live',
+    ].join(' ');
 
-  const scriptSources = [
-    "'self'",
-    "'unsafe-inline'",
-    "'unsafe-eval'",
-    'translate.googleapis.com',
-    'translate.google.com',
-    'www.google.com',
-    'www.gstatic.com',
-    'chrome-extension://bfdogplmndidlpjfhoijckpakkdjkkil/',
-    'https://accounts.google.com/gsi/client',
-    'https://accounts.google.com',
-    'https://pay.lenco.co',
-    'https://embed.tawk.to',
-    'https://tawk.to',
-    'https://va.tawk.to',
-    'https://*.tawk.to',
-    'https://static.cloudflareinsights.com',
-    'https://cdnjs.cloudflare.com',
-    'https://*.cloudflare.com',
-    ...lencoWidgetOrigins,
-  ].join(' ');
+    const scriptSources = [
+      "'self'",
+      "'unsafe-inline'",
+      'translate.googleapis.com',
+      'translate.google.com',
+      'www.google.com',
+      'www.gstatic.com',
+      'chrome-extension://bfdogplmndidlpjfhoijckpakkdjkkil/',
+      'https://accounts.google.com/gsi/client',
+      'https://accounts.google.com',
+      'https://pay.lenco.co',
+      'https://pay.sandbox.lenco.co',
+      'https://embed.tawk.to',
+      'https://tawk.to',
+      'https://va.tawk.to',
+      'https://*.tawk.to',
+      'https://static.cloudflareinsights.com',
+      'https://cdnjs.cloudflare.com',
+      'https://*.cloudflare.com',
+      ...lencoWidgetOrigins,
+    ].join(' ');
 
-  const frameSources = [
-    "'self'",
-    'https://accounts.google.com',
-    'https://embed.tawk.to',
-    'https://tawk.to',
-    'https://*.tawk.to',
-    ...lencoWidgetOrigins,
-  ].join(' ');
+    const frameSources = [
+      "'self'",
+      'https://accounts.google.com',
+      'https://embed.tawk.to',
+      'https://tawk.to',
+      'https://*.tawk.to',
+      ...lencoWidgetOrigins,
+    ].join(' ');
 
-  const cspHeader =
-    "default-src 'self'; " +
-    `script-src ${scriptSources}; ` +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://accounts.google.com/gsi/style; " +
-    "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://accounts.google.com/gsi/style; " +
-    "font-src 'self' https://fonts.gstatic.com; " +
-    "img-src 'self' data: https:; " +
-    `connect-src ${connectSources}; ` +
-    "media-src 'self' blob:; " +
-    `frame-src ${frameSources}; ` +
-    "object-src 'none'; " +
-    "base-uri 'self';";
+    const cspHeader =
+      "default-src 'self'; " +
+      `script-src ${scriptSources}; ` +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://accounts.google.com/gsi/style; " +
+      "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://accounts.google.com/gsi/style; " +
+      "font-src 'self' https://fonts.gstatic.com; " +
+      "img-src 'self' data: https:; " +
+      `connect-src ${connectSources}; ` +
+      "media-src 'self' blob:; " +
+      `frame-src ${frameSources}; ` +
+      "object-src 'none'; " +
+      "base-uri 'self';";
 
-  res.setHeader('Content-Security-Policy', cspHeader);
-  next();
-});
+    res.setHeader('Content-Security-Policy', cspHeader);
+    next();
+  });
+}
 
 // Serve static files from the dist directory in production
 if (process.env.NODE_ENV === 'production') {
@@ -163,11 +165,21 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Initialize Socket.IO
+const devSocketOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+];
+const socketOrigins = process.env.NODE_ENV !== 'production'
+  ? [...allowedOrigins, ...devSocketOrigins]
+  : allowedOrigins;
+
 const io = new Server(httpServer, {
   cors: {
-    origin: allowAnyOrigin ? '*' : allowedOrigins,
+    origin: socketOrigins,
     methods: ['GET', 'POST'],
-    credentials: !allowAnyOrigin,
+    credentials: true,
   },
 });
 
@@ -191,12 +203,12 @@ registerRoutes(app);
 
 // In production, serve the index.html file for any route that doesn't match an API endpoint
 if (process.env.NODE_ENV === 'production') {
-  app.get('/*splat', (req, res) => {
+  app.get('/*splat', (_req, res) => {
     res.sendFile(path.resolve(__dirname, '../dist/index.html'));
   });
 } else {
   // In development, return JSON for unmatched routes
-  app.use((req, res) => {
+  app.use((_req, res) => {
     res.status(404).json({ message: 'Not found' });
   });
 }

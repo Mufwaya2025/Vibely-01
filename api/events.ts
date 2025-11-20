@@ -13,12 +13,13 @@ export async function handleGetAllEvents(req?: { user: User | null }) {
     const allTickets = db.tickets.findAll();
     const requestingUser = req?.user ?? null;
 
-    const eventsWithCounts = allEvents.map(event => {
+    type WithCount = Event & { ticketsSold: number };
+    const eventsWithCounts: WithCount[] = allEvents.map(event => {
         const ticketsSold = allTickets.filter(t => t.eventId === event.id).length;
         return { ...event, ticketsSold };
     });
 
-    let visibleEvents = eventsWithCounts.filter(
+    let visibleEvents: WithCount[] = eventsWithCounts.filter(
       (event) => (event.status ?? 'published') === 'published'
     );
 
@@ -28,7 +29,7 @@ export async function handleGetAllEvents(req?: { user: User | null }) {
       const ownEvents = eventsWithCounts.filter(
         (event) => event.organizer.id === requestingUser.id
       );
-      const merged = new Map<string, Event>();
+      const merged = new Map<string, WithCount>();
       visibleEvents.forEach((event) => merged.set(event.id, event));
       ownEvents.forEach((event) => merged.set(event.id, event));
       visibleEvents = Array.from(merged.values());

@@ -1,7 +1,6 @@
-﻿import { db } from './db';
+import { db } from './db';
 import { requireAdmin } from './utils/auth';
 import {
-  ApiKeyRecord,
   DataExportJob,
   DataExportStatus,
   PlatformSettings,
@@ -282,3 +281,4 @@ export async function handleAdminUpdateExportStatus(
 
   return jsonResponse(updated);
 }
+

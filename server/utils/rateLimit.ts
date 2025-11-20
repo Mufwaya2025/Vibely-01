@@ -16,7 +16,6 @@ export const rateLimit = (windowMs: number, max: number, keyGenerator: (req: Req
   return (req: Request, res: Response, next: NextFunction) => {
     const key = keyGenerator(req);
     const now = Date.now();
-    const windowStart = now - windowMs;
 
     if (!rateLimitStore[key]) {
       rateLimitStore[key] = {

@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { GatewayTransaction, GatewayTransactionStatus, PaymentMethod, Ticket, User } from "../types";
+import { GatewayTransaction, GatewayTransactionStatus, PaymentMethod, Ticket, User, Event } from "../types";
 import { isLencoConfigured, lencoConfig } from "../server/config/lencoConfig";
 import {
   createReference,
@@ -82,9 +82,7 @@ const issueTicketForTransaction = (txn: GatewayTransaction): Ticket | null => {
     code: ticketId,
     holderName: user.name,
     holderEmail: user.email,
-    tierId: typeof txn.metadata?.ticketTierId === "string" ? (txn.metadata.ticketTierId as string) : undefined,
-    tierName: typeof txn.metadata?.ticketTierName === "string" ? (txn.metadata.ticketTierName as string) : undefined,
-  });
+  } as any);
 
   db.gatewayTransactions.attachTicket(txn.id, ticketId);
   db.events.update(event.id, {
@@ -99,8 +97,6 @@ const issueTicketForTransaction = (txn: GatewayTransaction): Ticket | null => {
     holderName: ticketRecord.holderName ?? user.name,
     holderEmail: ticketRecord.holderEmail ?? user.email,
     createdAt: ticketRecord.purchaseDate ?? now,
-    tierId: ticketRecord.tierId,
-    tierName: ticketRecord.tierName,
   };
 
   return issuedTicket;
@@ -135,7 +131,7 @@ export async function handleCreatePaymentSession(req: { body: PaymentSessionBody
   const reference = createReference(purpose === "ticket" ? "ticket" : "sub");
   const resolvedChannels = mapMethodsToChannels(channels);
 
-  let event = null;
+  let event: Event | null = null;
   if (purpose === "ticket") {
     if (!eventId) {
       return new Response(JSON.stringify({ message: "eventId is required for ticket payments." }), {
@@ -694,7 +690,7 @@ export async function handleGetUserTransactions(req: {
 interface WebhookRequest {
   params: { provider: string };
   headers: Record<string, string | undefined>;
-  body: Record<string, unknown>;
+  body: any; // may be Buffer when using express.raw
 }
 
 export async function handlePublicWebhook(req: WebhookRequest) {
@@ -705,7 +701,8 @@ export async function handlePublicWebhook(req: WebhookRequest) {
     });
   }
 
-  const payload = JSON.stringify(req.body);
+  const isBuffer = typeof Buffer !== 'undefined' && Buffer.isBuffer(req.body);
+  const payload = isBuffer ? (req.body as Buffer).toString('utf8') : JSON.stringify(req.body);
   const signatureHeader = req.headers['x-lenco-signature'];
   const expectedSignature = computeWebhookSignature(payload);
 
@@ -723,18 +720,19 @@ export async function handlePublicWebhook(req: WebhookRequest) {
     });
   }
 
-  const eventType = (req.body.event as string) ?? 'unknown';
+  const parsed = isBuffer ? (JSON.parse(payload) as Record<string, unknown>) : (req.body as Record<string, unknown>);
+  const eventType = (parsed.event as string) ?? 'unknown';
 
   db.webhookLogs.create({
     provider: PAYMENT_PROVIDER,
     eventType,
-    payload: req.body,
+    payload: parsed,
     status: 'received',
   });
 
   try {
     if (eventType === 'collection.successful') {
-      const reference = (req.body.data as Record<string, unknown>)?.reference as string | undefined;
+      const reference = (parsed.data as Record<string, unknown>)?.reference as string | undefined;
       if (reference) {
         await handleVerifyPayment({ body: { reference } });
       }

@@ -1,5 +1,5 @@
 import { db } from './db';
-import { Ticket, Event, User } from '../types';
+import { Event, User } from '../types';
 
 /**
  * Handles fetching all tickets for a specific user.
@@ -70,33 +70,25 @@ export async function handleCreateTicket(req: { body: { event: Event, user: User
     const { event, user, ticketTierId } = req.body;
     await new Promise(resolve => setTimeout(resolve, 200));
 
-    // If a ticket tier is specified, use that tier's details; otherwise use the event default
-    let selectedTier = null;
+    // If a ticket tier is specified, validate it exists for the event
     if (ticketTierId && event.ticketTiers) {
-        selectedTier = event.ticketTiers.find(tier => tier.id === ticketTierId);
-        if (!selectedTier) {
+        const exists = event.ticketTiers.some(tier => tier.id === ticketTierId);
+        if (!exists) {
             return new Response(JSON.stringify({ message: 'Invalid ticket tier selected' }), { status: 400 });
         }
     }
 
     const ticketId = `tkt-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-    const newTicket: Ticket = {
-        ticketId,
-        eventId: event.id,
-        userId: user.id,
-        purchaseDate: new Date().toISOString(),
-        status: 'valid',
-        code: ticketId,
-        holderName: user.name,
-        holderEmail: user.email,
-        // Add tier information to the ticket if available
-        ...(selectedTier && {
-            tierId: selectedTier.id,
-            tierName: selectedTier.name,
-        }),
-    };
-
-    const createdTicket = db.tickets.create(newTicket);
+    const createdTicket = db.tickets.create({
+      ticketId,
+      eventId: event.id,
+      userId: user.id,
+      purchaseDate: new Date().toISOString(),
+      status: 'valid',
+      code: ticketId,
+      holderName: user.name,
+      holderEmail: user.email,
+    } as any);
     return new Response(JSON.stringify(createdTicket), {
         status: 201,
         headers: { 'Content-Type': 'application/json' },

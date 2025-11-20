@@ -1,5 +1,4 @@
 import cors from 'cors';
-import type { Request, Response, NextFunction } from 'express';
 
 // Build list of trusted scanner app origins
 const EXTRA_ORIGINS = process.env.SCANNER_APP_ORIGINS

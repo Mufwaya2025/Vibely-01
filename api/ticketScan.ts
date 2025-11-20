@@ -1,6 +1,5 @@
 import { deviceAuthDb as db } from './deviceAuthDb';
-import { Ticket, ScanLog, TicketStatus, TicketScanResult } from '../types';
-import { verifyDeviceToken } from '../server/utils/jwt';
+import { ScanLog, TicketScanResult } from '../types';
 
 export async function handleTicketScan(req: { 
   body: {
@@ -37,7 +36,7 @@ export async function handleTicketScan(req: {
     let scanResult: TicketScanResult;
     let message: string;
 
-    let updatedTicket: Ticket | null = null;
+    let updatedTicket: any = null;
 
     if (!ticket) {
       scanResult = 'NOT_FOUND';
@@ -156,3 +155,4 @@ export async function handleTicketScan(req: {
     );
   }
 }
+

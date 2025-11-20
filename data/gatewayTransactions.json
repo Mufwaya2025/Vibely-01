@@ -2142,6 +2142,87 @@
       "id": "txn_0f91c9ea-20bb-4fda-bed3-7ec06aa95ad5",
       "createdAt": "2025-11-20T12:04:33.132Z",
       "updatedAt": "2025-11-20T12:04:33.132Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1763661798685-9exekg",
+      "purpose": "ticket",
+      "eventId": "evt-cb09b0ea-0a9f-4603-8c92-e6ce61291f8b",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+      "amount": 5,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Food Market",
+        "organizerId": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+        "ticketTierId": "tier-cb09-general",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Food Market (General Admission)"
+      },
+      "id": "txn_0736c357-3a05-49cb-93b5-7c52587ecc33",
+      "createdAt": "2025-11-20T18:03:18.686Z",
+      "updatedAt": "2025-11-20T18:03:18.686Z"
+    },
+    {
+      "externalId": "83a0e403-055e-49a3-a96e-5f764b36563e",
+      "reference": "ticket-1763665137282-jsju94",
+      "purpose": "ticket",
+      "eventId": "evt-cb09b0ea-0a9f-4603-8c92-e6ce61291f8b",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+      "amount": 5,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Food Market",
+        "organizerId": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+        "ticketTierId": "tier-cb09-general",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Food Market (General Admission)"
+      },
+      "id": "txn_bc58f0ba-6af5-45b9-b8cb-8b4f0df8010c",
+      "createdAt": "2025-11-20T18:58:57.284Z",
+      "updatedAt": "2025-11-20T19:00:05.273Z",
+      "lencoReference": "2532418271",
+      "bearer": "merchant",
+      "channel": "mobile-money",
+      "rawResponse": {
+        "id": "83a0e403-055e-49a3-a96e-5f764b36563e",
+        "initiatedAt": "2025-11-20T18:59:00.174Z",
+        "completedAt": null,
+        "amount": "5.00",
+        "fee": null,
+        "bearer": "merchant",
+        "currency": "ZMW",
+        "reference": "ticket-1763665137282-jsju94",
+        "lencoReference": "2532418271",
+        "type": "mobile-money",
+        "status": "pay-offline",
+        "source": "api",
+        "reasonForFailure": null,
+        "settlementStatus": null,
+        "settlement": null,
+        "mobileMoneyDetails": {
+          "country": "zm",
+          "phone": "0777098622",
+          "operator": "airtel",
+          "accountName": "Kaungu Mufwaya",
+          "operatorTransactionId": null
+        },
+        "bankAccountDetails": null,
+        "cardDetails": null
+      }
     }
   ]
 }
