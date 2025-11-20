@@ -233,6 +233,13 @@ const EventMap: React.FC<EventMapProps> = ({
     }
 
     const bounds = L.latLngBounds([]);
+    if (userLocation) {
+      if (radiusCircleRef.current) {
+        bounds.extend(radiusCircleRef.current.getBounds());
+      } else {
+        bounds.extend([userLocation.lat, userLocation.lon]);
+      }
+    }
 
     console.log('[EventMap] Drawing markers for:', eventsWithCoords.length, 'events');
     
@@ -308,7 +315,9 @@ const EventMap: React.FC<EventMapProps> = ({
 
     // If we have any events, fit to them
     if (eventsWithCoords.length > 0) {
-      map.fitBounds(bounds.pad(0.3));
+      if (bounds.isValid()) {
+        map.fitBounds(bounds.pad(0.3));
+      }
     } else if (userLocation) {
       // fallback to user location
       map.setView([userLocation.lat, userLocation.lon], 13);

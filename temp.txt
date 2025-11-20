@@ -1,0 +1,153 @@
+   1 : import 'dotenv/config';
+   2 : import express from 'express';
+   3 : import cors from 'cors';
+   4 : import path from 'path';
+   5 : import { fileURLToPath } from 'url';
+   6 : import { createServer } from 'http';
+   7 : import { Server } from 'socket.io';
+   8 : import { registerMessagingHandlers } from './messaging/socketManager';
+   9 : 
+  10 : // For serving static files
+  11 : const __filename = fileURLToPath(import.meta.url);
+  12 : const __dirname = path.dirname(__filename);
+   9 : 
+  14 : const app = express();
+  15 : const httpServer = createServer(app);
+   9 : 
+  17 : const port = parseInt(process.env.PORT ?? '4000', 10);
+  18 : const clientOrigin = process.env.CLIENT_ORIGIN ?? '*';
+  19 : const jsonLimit = process.env.JSON_BODY_LIMIT ?? '1mb';
+   9 : 
+  21 : const allowedOrigins = clientOrigin
+  22 :   .split(',')
+  23 :   .map((origin) => origin.trim())
+  24 :   .filter(Boolean);
+  25 : const allowAnyOrigin = allowedOrigins.length === 0 || allowedOrigins.includes('*');
+  26 : const allowedOriginsSet = new Set(allowedOrigins);
+   9 : 
+  28 : const isLocalhostOrigin = (origin: string | undefined): origin is string => {
+  29 :   if (!origin) return false;
+  30 :   try {
+  31 :     const { hostname } = new URL(origin);
+  32 :     return hostname === 'localhost' || hostname === '127.0.0.1';
+  33 :   } catch {
+  34 :     return false;
+  35 :   }
+  36 : };
+   9 : 
+  38 : app.use(
+  39 :   cors({
+  40 :     origin: (origin, callback) => {
+  41 :       if (allowAnyOrigin || !origin) {
+  42 :         callback(null, true);
+  43 :         return;
+  44 :       }
+  45 :       if (allowedOriginsSet.has(origin) || isLocalhostOrigin(origin)) {
+  46 :         callback(null, origin);
+  43 :         return;
+  44 :       }
+  49 :       callback(null, false);
+  50 :     },
+  51 :     credentials: !allowAnyOrigin,
+  52 :   })
+  53 : );
+  54 : app.use(express.json({ limit: jsonLimit }));
+  55 : app.use(express.urlencoded({ extended: true }));
+   9 : 
+  57 : // Set Content Security Policy header for security
+  58 : app.use((req, res, next) => {
+  59 :   // Define the Content Security Policy
+  60 : const connectSources = [
+  61 :   "'self'",
+  62 :   'https://vibelyapp.live:4000',
+  63 :   'http://localhost:4000',
+  64 :   'http://localhost:3000',
+  65 :   'http://localhost:3001',
+  66 :     'https://fonts.googleapis.com',
+  67 :     'https://fonts.gstatic.com',
+  68 :     'https://accounts.google.com',
+  69 :     'https://www.gstatic.com',
+  70 :   'https://pay.lenco.co',
+  71 :   'https://tile.openstreetmap.org',
+  72 :   'https://*.tile.openstreetmap.org',
+  73 :   'https://www.openstreetmap.org',
+  74 :   'https://embed.tawk.to',
+  75 :   'https://tawk.to',
+  76 :   'https://*.tawk.to',
+  77 :   'wss://vibelyapp.live',
+  78 :   'wss:',
+  79 :   'ws:',
+  80 : ].join(' ');
+   9 : 
+  82 : const cspHeader =
+  83 :   "default-src 'self'; " +
+  84 :   "script-src 'self' 'unsafe-inline' 'unsafe-eval' translate.googleapis.com translate.google.com www.google.com www.gstatic.com chrome-extension://bfdogplmndidlpjfhoijckpakkdjkkil/ https://pay.lenco.co https://accounts.google.com/gsi/client https://embed.tawk.to https://tawk.to https://va.tawk.to https://*.tawk.to; " +
+  85 :   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://accounts.google.com/gsi/style; " +
+  86 :   "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://accounts.google.com/gsi/style; " +
+  87 :   "font-src 'self' https://fonts.gstatic.com; " +
+  88 :   "img-src 'self' data: https:; " +
+  89 :   `connect-src ${connectSources}; ` +
+  90 :   "media-src 'self' blob:; " +
+  91 :   "frame-src 'self' https://pay.lenco.co https://accounts.google.com https://embed.tawk.to https://tawk.to https://*.tawk.to; " +
+  92 :   "object-src 'none'; " +
+  93 :   "base-uri 'self';";
+   9 : 
+  95 :   res.setHeader('Content-Security-Policy', cspHeader);
+  96 :   next();
+  97 : });
+   9 : 
+  99 : // Serve static files from the dist directory in production
+ 100 : if (process.env.NODE_ENV === 'production') {
+ 101 :   app.use(express.static(path.resolve(__dirname, '../dist')));
+ 102 : }
+   9 : 
+ 104 : // Initialize Socket.IO
+ 105 : const io = new Server(httpServer, {
+ 106 :   cors: {
+ 107 :     origin: allowAnyOrigin ? '*' : allowedOrigins,
+ 108 :     methods: ['GET', 'POST'],
+  51 :     credentials: !allowAnyOrigin,
+ 110 :   },
+  97 : });
+   9 : 
+ 113 : registerMessagingHandlers(io);
+   9 : 
+ 115 : import { attachUser } from './middleware/attachUser';
+ 116 : import { enforceActiveUser } from './middleware/enforceActiveUser';
+ 117 : import { registerRoutes } from './routes';
+ 118 : import { deviceAuthRateLimiter, ticketScanRateLimiter } from './middleware/rateLimit';
+ 119 : import { scannerCors } from './middleware/cors';
+   9 : 
+ 121 : // Apply rate limiting and CORS for specific routes
+ 122 : app.use('/api/devices/authorize', deviceAuthRateLimiter);
+ 123 : app.use('/api/tickets/scan-secure', ticketScanRateLimiter);
+ 124 : app.use('/api/devices', scannerCors);
+ 125 : app.use('/api/tickets/scan-secure', scannerCors);
+   9 : 
+ 127 : app.use(attachUser);
+ 128 : app.use(enforceActiveUser);
+ 129 : registerRoutes(app);
+   9 : 
+ 131 : // In production, serve the index.html file for any route that doesn't match an API endpoint
+ 100 : if (process.env.NODE_ENV === 'production') {
+ 133 :   app.get('/*splat', (req, res) => {
+ 134 :     res.sendFile(path.resolve(__dirname, '../dist/index.html'));
+ 135 :   });
+ 136 : } else {
+ 137 :   // In development, return JSON for unmatched routes
+ 138 :   app.use((req, res) => {
+ 139 :     res.status(404).json({ message: 'Not found' });
+ 135 :   });
+ 102 : }
+   9 : 
+  38 : app.use(
+ 144 :   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 145 :   (err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+ 146 :     console.error('Unhandled server error:', err);
+ 147 :     res.status(500).json({ message: 'Internal server error' });
+  35 :   }
+  53 : );
+   9 : 
+ 151 : httpServer.listen(port, () => {
+ 152 :   console.log(`[server] listening on port ${port}`);
+  97 : });

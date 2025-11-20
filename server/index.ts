@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { registerMessagingHandlers } from './messaging/socketManager';
+import { lencoConfig } from './config/lencoConfig';
 
 // For serving static files
 const __filename = fileURLToPath(import.meta.url);
@@ -54,43 +55,93 @@ app.use(
 app.use(express.json({ limit: jsonLimit }));
 app.use(express.urlencoded({ extended: true }));
 
+const unique = (values: (string | undefined | null)[]) =>
+  Array.from(new Set(values.filter((value): value is string => Boolean(value))));
+
+const resolveOrigin = (url: string | undefined) => {
+  if (!url) return undefined;
+  try {
+    return new URL(url).origin;
+  } catch {
+    return undefined;
+  }
+};
+
+const lencoWidgetOrigins = unique([
+  'https://pay.lenco.co',
+  'https://pay.sandbox.lenco.co',
+  resolveOrigin(lencoConfig.widgetUrl),
+]);
+
+const lencoApiOrigins = unique([
+  'https://api.lenco.co',
+  'https://api.sandbox.lenco.co',
+  resolveOrigin(lencoConfig.apiBase),
+]);
+
 // Set Content Security Policy header for security
-app.use((req, res, next) => {
-  // Define the Content Security Policy
-const connectSources = [
-  "'self'",
-  'https://vibelyapp.live:4000',
-  'http://localhost:4000',
-  'http://localhost:3000',
-  'http://localhost:3001',
+app.use((_req, res, next) => {
+  const connectSources = [
+    "'self'",
+    'https://vibelyapp.live:4000',
+    'http://localhost:4000',
+    'http://localhost:3000',
+    'http://localhost:3001',
     'https://fonts.googleapis.com',
     'https://fonts.gstatic.com',
     'https://accounts.google.com',
     'https://www.gstatic.com',
-  'https://pay.lenco.co',
-  'https://tile.openstreetmap.org',
-  'https://*.tile.openstreetmap.org',
-  'https://www.openstreetmap.org',
-  'https://embed.tawk.to',
-  'https://tawk.to',
-  'https://*.tawk.to',
-  'wss://vibelyapp.live',
-  'wss:',
-  'ws:',
-].join(' ');
+    ...lencoWidgetOrigins,
+    ...lencoApiOrigins,
+    'https://tile.openstreetmap.org',
+    'https://*.tile.openstreetmap.org',
+    'https://www.openstreetmap.org',
+    'https://embed.tawk.to',
+    'https://tawk.to',
+    'https://*.tawk.to',
+    'wss://vibelyapp.live',
+    'wss:',
+    'ws:',
+  ].join(' ');
 
-const cspHeader =
-  "default-src 'self'; " +
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' translate.googleapis.com translate.google.com www.google.com www.gstatic.com chrome-extension://bfdogplmndidlpjfhoijckpakkdjkkil/ https://pay.lenco.co https://accounts.google.com/gsi/client https://embed.tawk.to https://tawk.to https://va.tawk.to https://*.tawk.to; " +
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://accounts.google.com/gsi/style; " +
-  "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://accounts.google.com/gsi/style; " +
-  "font-src 'self' https://fonts.gstatic.com; " +
-  "img-src 'self' data: https:; " +
-  `connect-src ${connectSources}; ` +
-  "media-src 'self' blob:; " +
-  "frame-src 'self' https://pay.lenco.co https://accounts.google.com https://embed.tawk.to https://tawk.to https://*.tawk.to; " +
-  "object-src 'none'; " +
-  "base-uri 'self';";
+  const scriptSources = [
+    "'self'",
+    "'unsafe-inline'",
+    "'unsafe-eval'",
+    'translate.googleapis.com',
+    'translate.google.com',
+    'www.google.com',
+    'www.gstatic.com',
+    'chrome-extension://bfdogplmndidlpjfhoijckpakkdjkkil/',
+    'https://accounts.google.com/gsi/client',
+    'https://embed.tawk.to',
+    'https://tawk.to',
+    'https://va.tawk.to',
+    'https://*.tawk.to',
+    ...lencoWidgetOrigins,
+  ].join(' ');
+
+  const frameSources = [
+    "'self'",
+    'https://accounts.google.com',
+    'https://embed.tawk.to',
+    'https://tawk.to',
+    'https://*.tawk.to',
+    ...lencoWidgetOrigins,
+  ].join(' ');
+
+  const cspHeader =
+    "default-src 'self'; " +
+    `script-src ${scriptSources}; ` +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://accounts.google.com/gsi/style; " +
+    "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://accounts.google.com/gsi/style; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "img-src 'self' data: https:; " +
+    `connect-src ${connectSources}; ` +
+    "media-src 'self' blob:; " +
+    `frame-src ${frameSources}; ` +
+    "object-src 'none'; " +
+    "base-uri 'self';";
 
   res.setHeader('Content-Security-Policy', cspHeader);
   next();

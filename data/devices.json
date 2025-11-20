@@ -19,10 +19,10 @@
       "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
       "eventId": "evt-8989570f-396c-44a8-8afc-2b797d0b0d25",
       "devicePublicId": "dev-6hp3qhk9",
-      "deviceSecret": "$2a$10$Ofrf4D1ZjtcuDMNf4uDx7uxHgNba.krcSaxZKOD2P0wySXUluFtSO",
+      "deviceSecret": "$2a$10$Pe.zVVXnXiud4LzMln.t/.aCazk3KSOuVWF8swISySMm26KkFitc2",
       "isActive": true,
       "createdAt": "2025-11-19T15:09:39.550Z",
-      "updatedAt": "2025-11-19T16:37:52.895Z",
+      "updatedAt": "2025-11-19T18:22:19.124Z",
       "lastSeenAt": "2025-11-19T16:37:52.894Z",
       "lastIp": "102.208.220.204"
     }
