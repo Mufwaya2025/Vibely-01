@@ -46,7 +46,7 @@ When you have all the details needed to initiate the payment, the next step is t
 
 HTML
 
-<script src="/payment.js"></script>
+<script src="https://pay.lenco.co/js/v1/inline.js"></script>
 
 <script>
 function getPaidWithLenco() {
@@ -78,7 +78,7 @@ function getPaidWithLenco() {
 }
 </script>
 
-The production widget is served from `/payment.js`, a local copy of Lenco’s inline loader (the contents of the original `inline.js`) linked by default.  
+The production widget loads directly from `https://pay.lenco.co/js/v1/inline.js`, which is Lenco’s hosted inline loader.  
 For the sandbox environment, set `LENCO_ENV=sandbox` (or override the widget URL) and use https://pay.sandbox.lenco.co/js/v1/inline.js as the source for the Lenco widget script.
 
 Important Notes:

@@ -1,5 +1,5 @@
 import { GatewayTransactionStatus, PaymentDetails, PaymentMethod, Ticket, User } from '../types';
-import { apiFetch, apiFetchJson } from '../utils/apiClient';
+import { apiFetchJson } from '../utils/apiClient';
 import { addPendingReference, removePendingReference } from './pendingTransactionService';
 import { ensureLencoWidget } from '../utils/lenco';
 
@@ -60,7 +60,6 @@ export const getPaymentDetails = (): PaymentDetails | null => {
   }
 };
 
-
 export interface ProcessPaymentResult {
   success: boolean;
   transactionId: string;
@@ -71,10 +70,8 @@ export interface ProcessPaymentResult {
   issuedTicket?: Ticket | null;
 }
 
-export const processPayment = async (
-  options: ProcessPaymentOptions
-): Promise<ProcessPaymentResult> => {
-  const session = await apiFetchJson<PaymentSessionResponse>('/api/payments/session', {
+const fetchPaymentSession = async (options: ProcessPaymentOptions): Promise<PaymentSessionResponse> =>
+  apiFetchJson<PaymentSessionResponse>('/api/payments/session', {
     method: 'POST',
     body: {
       purpose: options.purpose,
@@ -89,161 +86,117 @@ export const processPayment = async (
     },
   });
 
+const verifyPayment = async (reference: string): Promise<ProcessPaymentResult> => {
+  const response = await apiFetchJson<{
+    success: boolean;
+    status: string;
+    transaction?: Record<string, unknown>;
+    updatedUser?: User | null;
+    issuedTicket?: Ticket | null;
+  }>('/api/payments/verify', {
+    method: 'POST',
+    body: { reference },
+  });
+
+  return {
+    success: response.success,
+    status: response.status,
+    transactionId: (response.transaction as any)?.id ?? '',
+    transaction: response.transaction,
+    updatedUser: response.updatedUser ?? null,
+    issuedTicket: response.issuedTicket ?? null,
+    reference,
+  };
+};
+
+const createOverlay = () => {
+  const overlay = document.createElement('div');
+  overlay.style.cssText =
+    'display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.85); color:#fff; font-weight:600; font-size:1rem; align-items:center; justify-content:center;';
+  overlay.textContent = 'Confirming payment...';
+  document.body.appendChild(overlay);
+  return overlay;
+};
+
+const toggleOverlay = (overlay: HTMLDivElement, show: boolean, text?: string) => {
+  overlay.textContent = text ?? overlay.textContent;
+  overlay.style.display = show ? 'flex' : 'none';
+};
+
+const launchLencoWidget = (
+  session: PaymentSessionResponse
+): Promise<'success' | 'confirmation' | 'closed'> => {
+  const payload = {
+    key: session.publicKey,
+    reference: session.reference,
+    email: session.email,
+    amount: session.amount,
+    currency: session.currency,
+    channels: session.channels.length > 0 ? session.channels : ['card', 'mobile-money'],
+    label: session.label,
+    customer: session.customer,
+  };
+
+  return new Promise((resolve, reject) => {
+    const lenco = (window as Window & { LencoPay?: { getPaid: (config: Record<string, unknown>) => void } }).LencoPay;
+    if (!lenco || typeof lenco.getPaid !== 'function') {
+      reject(new Error('Lenco widget was not detected on this page.'));
+      return;
+    }
+
+    try {
+      lenco.getPaid({
+        ...payload,
+        onSuccess: () => resolve('success'),
+        onConfirmationPending: () => resolve('confirmation'),
+        onClose: () => resolve('closed'),
+      });
+    } catch (error) {
+      reject(new Error('Failed to open the secure Lenco checkout.'));
+    }
+  });
+};
+
+export const processPayment = async (
+  options: ProcessPaymentOptions
+): Promise<ProcessPaymentResult> => {
+  const session = await fetchPaymentSession(options);
   addPendingReference(session.reference, options.purpose);
 
   if (typeof window === 'undefined') {
     throw new Error('Payments can only be processed in a browser environment.');
   }
 
-  const createStatusOverlay = () => {
-    const overlay = document.createElement('div');
-    overlay.style.cssText =
-      'display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.85); color:#fff; font-weight:600; font-size:1rem; align-items:center; justify-content:center;';
-    overlay.textContent = 'Confirming payment...';
-    document.body.appendChild(overlay);
-    return overlay;
-  };
+  const overlay = createOverlay();
 
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    let verifying = false;
-    const statusOverlay = createStatusOverlay();
+  try {
+    await ensureLencoWidget(session.widgetUrl);
 
-    const cleanup = () => {
-      if (statusOverlay.parentNode) {
-        statusOverlay.parentNode.removeChild(statusOverlay);
-      }
-    };
+    toggleOverlay(overlay, true, 'Opening secure checkout...');
 
-    const finishSuccess = (payload: Omit<ProcessPaymentResult, 'reference'>) => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      if (payload.success) {
-        removePendingReference(session.reference);
-      }
-      resolve({ ...payload, reference: session.reference });
-    };
+    const result = await launchLencoWidget(session);
+    toggleOverlay(overlay, true, 'Confirming payment with Lenco...');
 
-    const finishError = (message: string, opts?: { removePending?: boolean }) => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      if (opts?.removePending) {
-        removePendingReference(session.reference);
-      }
-      const error = new Error(
-        message.includes(session.reference)
-          ? message
-          : `${message} (Reference: ${session.reference})`
-      );
-      (error as Error & { reference?: string }).reference = session.reference;
-      reject(error);
-    };
+    if (result === 'closed') {
+      throw new Error('Payment was closed before completion.');
+    }
 
-    const showStatus = (message: string) => {
-      statusOverlay.textContent = message;
-      statusOverlay.style.display = 'flex';
-    };
+    const verification = await verifyPayment(session.reference);
 
-    const hideStatus = () => {
-      statusOverlay.style.display = 'none';
-    };
+    if (verification.success) {
+      removePendingReference(session.reference);
+    }
 
-    const handleVerification = async () => {
-      if (verifying) return;
-      verifying = true;
-      showStatus('Confirming payment with Lenco...');
-      try {
-        const verification = await apiFetchJson<{
-          success: boolean;
-          status: string;
-          transaction?: Record<string, unknown>;
-          updatedUser?: User | null;
-          issuedTicket?: Ticket | null;
-        }>('/api/payments/verify', {
-          method: 'POST',
-          body: { reference: session.reference },
-        });
-        hideStatus();
-        finishSuccess({
-          success: verification.success,
-          status: verification.status,
-          transactionId: (verification.transaction as any)?.id ?? '',
-          transaction: verification.transaction,
-          updatedUser: verification.updatedUser ?? null,
-          issuedTicket: verification.issuedTicket ?? null,
-        });
-      } catch (error) {
-        console.error('Verification failed', error);
-        finishError('Payment verification failed. Please contact support.');
-      }
-    };
-
-    const checkoutConfig = {
-      key: session.publicKey,
-      reference: session.reference,
-      email: session.email,
-      amount: session.amount,
-      currency: session.currency,
-      channels: session.channels.length > 0 ? session.channels : ['card', 'mobile-money'],
-      label: session.label,
-      customer: session.customer,
-    };
-
-    const abortCheckout = (reason: string, error?: unknown) => {
-      console.error(reason, error);
-      finishError(
-        `${reason} Please refresh the page, disable popup/trackers for pay.lenco.co, and try again.`,
-        { removePending: true }
-      );
-    };
-
-    const launchCheckout = async () => {
-      try {
-        await ensureLencoWidget(session.widgetUrl);
-      } catch (err) {
-        abortCheckout('Failed to load the secure Lenco checkout widget.', err);
-        return;
-      }
-
-      if (session.mockMode) {
-        showStatus('Simulating secure checkout...');
-        setTimeout(() => {
-          handleVerification();
-        }, 1000);
-        return;
-      }
-
-      const lenco = (window as Window & {
-        LencoPay?: { getPaid: (config: Record<string, unknown>) => void };
-      }).LencoPay;
-
-      if (!lenco || typeof lenco.getPaid !== 'function') {
-        abortCheckout('Lenco checkout was not detected on this page.');
-        return;
-      }
-
-      try {
-        lenco.getPaid({
-          ...checkoutConfig,
-          onSuccess: () => {
-            handleVerification();
-          },
-          onConfirmationPending: () => {
-            handleVerification();
-          },
-          onClose: () => {
-            finishError('Payment was closed before completion.', { removePending: true });
-          },
-        });
-      } catch (error) {
-        abortCheckout('Failed to open the secure Lenco checkout.', error);
-      }
-    };
-
-    launchCheckout();
-  });
+    return verification;
+  } catch (error) {
+    removePendingReference(session.reference);
+    throw error;
+  } finally {
+    toggleOverlay(overlay, false);
+    if (overlay.parentNode) {
+      overlay.parentNode.removeChild(overlay);
+    }
+  }
 };
 
 export const attachTicketToTransaction = async (
@@ -251,15 +204,18 @@ export const attachTicketToTransaction = async (
   ticketId: string
 ): Promise<void> => {
   if (!transactionId || !ticketId) return;
-  const response = await apiFetch('/api/payments/attach-ticket', {
+  const response = await apiFetchJson<{ success: boolean }>(`/api/payments/attach-ticket`, {
     method: 'POST',
     body: { transactionId, ticketId },
   });
 
-  if (!response.ok) {
-    console.error('Failed to attach ticket to transaction:', await response.text());
+  if (!response.success) {
+    console.warn('Failed to attach ticket to transaction', transactionId, ticketId);
   }
 };
+
+export const verifyPaymentReference = (reference: string): Promise<ProcessPaymentResult> =>
+  verifyPayment(reference);
 
 export interface SubscriptionTransactionSummary {
   id: string;
@@ -293,34 +249,6 @@ export interface UserTransactionSummary {
   updatedAt: string;
 }
 
-export const verifyPaymentReference = async (reference: string): Promise<ProcessPaymentResult> => {
-  const verification = await apiFetchJson<{
-    success: boolean;
-    status: string;
-    transaction?: Record<string, unknown>;
-    updatedUser?: User | null;
-    issuedTicket?: Ticket | null;
-  }>('/api/payments/verify', {
-    method: 'POST',
-    body: { reference },
-  });
-
-  const result: ProcessPaymentResult = {
-    success: verification.success,
-    status: verification.status,
-    transactionId: (verification.transaction as any)?.id ?? '',
-    transaction: verification.transaction,
-    updatedUser: verification.updatedUser ?? null,
-    reference,
-    issuedTicket: verification.issuedTicket ?? null,
-  };
-
-  if (result.success) {
-    removePendingReference(reference);
-  }
-
-  return result;
-};
 export const fetchSubscriptionTransactions = async (
   user: User
 ): Promise<SubscriptionTransactionSummary[]> => {
