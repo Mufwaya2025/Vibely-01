@@ -115,6 +115,7 @@ app.use((_req, res, next) => {
     'www.gstatic.com',
     'chrome-extension://bfdogplmndidlpjfhoijckpakkdjkkil/',
     'https://accounts.google.com/gsi/client',
+    'https://accounts.google.com',
     'https://embed.tawk.to',
     'https://tawk.to',
     'https://va.tawk.to',

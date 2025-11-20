@@ -3,7 +3,7 @@ import 'dotenv/config';
 const LENCO_ENV = (process.env.LENCO_ENV || process.env.NODE_ENV || 'production').toLowerCase();
 
 const DEFAULT_API_BASE = 'https://api.lenco.co/access/v2';
-const DEFAULT_WIDGET_URL = '/lenco-inline.js';
+const DEFAULT_WIDGET_URL = '/payment.js';
 const SANDBOX_API_BASE = 'https://api.sandbox.lenco.co/access/v2';
 const SANDBOX_WIDGET_URL = 'https://pay.sandbox.lenco.co/js/v1/inline.js';
 
