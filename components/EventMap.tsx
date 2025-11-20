@@ -10,6 +10,27 @@ const markerShadow = new URL('leaflet/dist/images/marker-shadow.png', import.met
 import { Event } from '../types';
 import { formatPrice } from '../utils/tickets';
 
+// Basic HTML escaping to prevent XSS when injecting strings into HTML templates
+const esc = (input: string): string =>
+  String(input).replace(/[&<>"'`]/g, (ch) => {
+    switch (ch) {
+      case '&':
+        return '&amp;';
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '"':
+        return '&quot;';
+      case "'":
+        return '&#39;';
+      case '`':
+        return '&#96;';
+      default:
+        return ch;
+    }
+  });
+
 const TILE_SOURCE = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const TILE_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
@@ -273,10 +294,10 @@ const EventMap: React.FC<EventMapProps> = ({
       popupContent.innerHTML = `
         <div class="space-y-2">
           <div class="flex items-center justify-between">
-            <h3 class="font-semibold text-sm">${event.title}</h3>
+            <h3 class="font-semibold text-sm">${esc(event.title)}</h3>
             <span class="text-xs text-purple-600 font-semibold">${formatPrice(event.price)}</span>
           </div>
-          <p class="text-xs text-gray-600">${truncatedDescription}</p>
+          <p class="text-xs text-gray-600">${esc(truncatedDescription)}</p>
           <div class="flex items-center justify-between">
             <button class="view-btn px-3 py-1 text-xs rounded-md bg-purple-600 text-white hover:bg-purple-700 transition">Details</button>
             ${
@@ -305,9 +326,9 @@ const EventMap: React.FC<EventMapProps> = ({
       
       // Add tooltip for hover
       const tooltipContent = `
-        <div class="font-semibold text-sm">${event.title}</div>
+        <div class="font-semibold text-sm">${esc(event.title)}</div>
         <div class="text-xs text-gray-600">${formatPrice(event.price)}</div>
-        <div class="text-xs text-gray-500">${event.location}</div>
+        <div class="text-xs text-gray-500">${esc(event.location)}</div>
       `;
       marker.bindTooltip(tooltipContent, { 
         permanent: false, 

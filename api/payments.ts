@@ -1,4 +1,5 @@
 import { db } from "./db";
+import crypto from "crypto";
 import { GatewayTransaction, GatewayTransactionStatus, PaymentMethod, Ticket, User, Event } from "../types";
 import { isLencoConfigured, lencoConfig } from "../server/config/lencoConfig";
 import {
@@ -706,7 +707,10 @@ export async function handlePublicWebhook(req: WebhookRequest) {
   const signatureHeader = req.headers['x-lenco-signature'];
   const expectedSignature = computeWebhookSignature(payload);
 
-  if (!signatureHeader || signatureHeader !== expectedSignature) {
+  const provided = Buffer.from(String(signatureHeader || ''), 'utf8');
+  const expected = Buffer.from(expectedSignature, 'utf8');
+  const validSig = provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
+  if (!signatureHeader || !validSig) {
     db.webhookLogs.create({
       provider: PAYMENT_PROVIDER,
       eventType: (req.body.event as string) ?? 'unknown',
@@ -722,8 +726,9 @@ export async function handlePublicWebhook(req: WebhookRequest) {
 
   const parsed = isBuffer ? (JSON.parse(payload) as Record<string, unknown>) : (req.body as Record<string, unknown>);
   const eventType = (parsed.event as string) ?? 'unknown';
-
-  db.webhookLogs.create({
+  
+  // Create log entry and check idempotency by reference
+  const log = db.webhookLogs.create({
     provider: PAYMENT_PROVIDER,
     eventType,
     payload: parsed,
@@ -734,11 +739,21 @@ export async function handlePublicWebhook(req: WebhookRequest) {
     if (eventType === 'collection.successful') {
       const reference = (parsed.data as Record<string, unknown>)?.reference as string | undefined;
       if (reference) {
+        // Idempotency: skip if we have already processed this reference
+        if (db.webhookLogs.hasProcessedReference(PAYMENT_PROVIDER, reference)) {
+          db.webhookLogs.updateStatus(log.id, 'processed', 'Duplicate');
+          return new Response(JSON.stringify({ received: true, duplicate: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
         await handleVerifyPayment({ body: { reference } });
+        db.webhookLogs.updateStatus(log.id, 'processed', 'OK');
       }
     }
   } catch (error) {
     console.error('Failed to process webhook event', error);
+    db.webhookLogs.updateStatus(log.id, 'failed', 'Processing error');
   }
 
   return new Response(JSON.stringify({ received: true }), {

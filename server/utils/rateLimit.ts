@@ -71,3 +71,23 @@ export const ticketScanRateLimiter = rateLimit(
     return `ticket_scan:${deviceId}`;
   }
 );
+
+// General auth limiter for /api/auth/* endpoints
+export const authRateLimiter = rateLimit(
+  60 * 1000, // 1 minute
+  10, // 10 requests per minute per IP
+  (req) => {
+    const ip = req.ip || 'unknown';
+    return `auth:${ip}`;
+  }
+);
+
+// Webhook limiter for /api/webhooks/* endpoints
+export const webhookRateLimiter = rateLimit(
+  60 * 1000, // 1 minute
+  30, // 30 requests per minute per IP
+  (req) => {
+    const ip = req.ip || 'unknown';
+    return `webhook:${ip}`;
+  }
+);

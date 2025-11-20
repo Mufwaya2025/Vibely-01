@@ -190,11 +190,14 @@ import { attachUser } from './middleware/attachUser';
 import { enforceActiveUser } from './middleware/enforceActiveUser';
 import { registerRoutes } from './routes';
 import { deviceAuthRateLimiter, ticketScanRateLimiter } from './middleware/rateLimit';
+import { authRateLimiter, webhookRateLimiter } from './utils/rateLimit';
 import { scannerCors } from './middleware/cors';
 
 // Apply rate limiting and CORS for specific routes
+app.use('/api/auth', authRateLimiter);
 app.use('/api/devices/authorize', deviceAuthRateLimiter);
 app.use('/api/tickets/scan-secure', ticketScanRateLimiter);
+app.use('/api/webhooks', webhookRateLimiter);
 app.use('/api/devices', scannerCors);
 app.use('/api/tickets/scan-secure', scannerCors);
 
