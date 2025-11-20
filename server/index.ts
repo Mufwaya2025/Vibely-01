@@ -118,7 +118,6 @@ app.use((_req, res, next) => {
     'https://tawk.to',
     'https://va.tawk.to',
     'https://*.tawk.to',
-    'https://static.cloudflareinsights.com',
     ...lencoWidgetOrigins,
   ].join(' ');
 
