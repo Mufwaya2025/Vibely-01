@@ -119,4 +119,16 @@ export const webhookLogsStore = {
     setCache(logs);
     return updated;
   },
+
+  hasProcessedReference(provider: string, reference: string): boolean {
+    const logs = getCache();
+    for (const log of logs) {
+      if (log.provider !== provider) continue;
+      if (log.status !== 'processed') continue;
+      const payload: any = log.payload || {};
+      const ref = (payload?.data && (payload.data as any).reference) || payload?.reference;
+      if (typeof ref === 'string' && ref === reference) return true;
+    }
+    return false;
+  },
 };
