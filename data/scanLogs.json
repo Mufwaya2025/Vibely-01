@@ -151,6 +151,20 @@
       "lon": 28.3562391,
       "ip": "::ffff:127.0.0.1",
       "createdAt": "2025-11-19T16:38:37.969Z"
+    },
+    {
+      "id": "sl-1763717963271-qgojiio8l",
+      "ticketId": "tkt-1763716175165-rx42s4",
+      "eventId": "evt-1aeedb29-63df-41b0-b62f-67d59891172f",
+      "deviceId": "dev-1763564979548",
+      "staffUserId": "staff-1763564802854",
+      "scanResult": "VALID",
+      "message": "Ticket accepted for entry",
+      "scannedAt": "2025-11-21T09:39:23.272Z",
+      "lat": -15.3883338,
+      "lon": 28.3163463,
+      "ip": "::1",
+      "createdAt": "2025-11-21T09:39:23.272Z"
     }
   ]
 }

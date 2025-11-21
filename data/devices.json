@@ -17,14 +17,14 @@
       "name": "Device Test",
       "staffUserId": "staff-1763564802854",
       "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
-      "eventId": "evt-8989570f-396c-44a8-8afc-2b797d0b0d25",
+      "eventId": "evt-1aeedb29-63df-41b0-b62f-67d59891172f",
       "devicePublicId": "dev-6hp3qhk9",
-      "deviceSecret": "$2a$10$Pe.zVVXnXiud4LzMln.t/.aCazk3KSOuVWF8swISySMm26KkFitc2",
+      "deviceSecret": "$2a$10$ofeMi3/qsSD29VCa6qNCcek2ScgmVvx0E6qLHEZXeMYwpeJnISvGO",
       "isActive": true,
       "createdAt": "2025-11-19T15:09:39.550Z",
-      "updatedAt": "2025-11-19T18:22:19.124Z",
-      "lastSeenAt": "2025-11-19T16:37:52.894Z",
-      "lastIp": "102.208.220.204"
+      "updatedAt": "2025-11-21T09:07:17.818Z",
+      "lastSeenAt": "2025-11-21T09:07:17.818Z",
+      "lastIp": "102.67.161.111"
     }
   ]
 }

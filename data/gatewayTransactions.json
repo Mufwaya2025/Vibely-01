@@ -2417,6 +2417,44 @@
         "bearer": "merchant"
       },
       "ticketId": "tkt-1763709907600-nptpp5"
+    },
+    {
+      "externalId": "mock-ticket-1763716081990-q3aawr",
+      "reference": "ticket-1763716081990-q3aawr",
+      "purpose": "ticket",
+      "eventId": "evt-1aeedb29-63df-41b0-b62f-67d59891172f",
+      "userId": "7fd0ec94-d52c-4e3d-b062-3d5386eb5371",
+      "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "amount": 1,
+      "currency": "ZMW",
+      "status": "succeeded",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Tech Event",
+        "organizerId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+        "ticketTierId": "tier-1763715555709-26aay",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Tech Event (General Admission)"
+      },
+      "id": "txn_d17e1d99-622b-43bd-be56-af15a779cb81",
+      "createdAt": "2025-11-21T09:08:01.990Z",
+      "updatedAt": "2025-11-21T09:09:35.169Z",
+      "bearer": "merchant",
+      "rawResponse": {
+        "id": "mock-ticket-1763716081990-q3aawr",
+        "initiatedAt": "2025-11-21T09:09:35.161Z",
+        "completedAt": "2025-11-21T09:09:35.161Z",
+        "amount": "0",
+        "currency": "ZMW",
+        "reference": "ticket-1763716081990-q3aawr",
+        "status": "successful",
+        "bearer": "merchant"
+      },
+      "ticketId": "tkt-1763716175165-rx42s4"
     }
   ]
 }

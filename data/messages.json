@@ -206,6 +206,15 @@
       "senderName": "Admin User",
       "receiverId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
       "content": "Your event \"Jazz Night\" has been approved by Admin User and is now live on Vibely."
+    },
+    {
+      "id": "d7943bdf-8451-49be-85a6-99163701aa0f",
+      "timestamp": "2025-11-21T09:01:31.926Z",
+      "read": false,
+      "senderId": "admin-1",
+      "senderName": "Admin User",
+      "receiverId": "0ce21237-80d9-426c-8018-fb270cdcd4ca",
+      "content": "Your event \"Tech Event\" has been approved by Admin User and is now live on Vibely."
     }
   ]
 }

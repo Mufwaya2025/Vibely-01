@@ -100,6 +100,17 @@
       "code": "tkt-1763709907600-nptpp5",
       "holderName": "Musanide Lubunda",
       "holderEmail": "smlsunburst@yahoo.com"
+    },
+    {
+      "ticketId": "tkt-1763716175165-rx42s4",
+      "eventId": "evt-1aeedb29-63df-41b0-b62f-67d59891172f",
+      "userId": "7fd0ec94-d52c-4e3d-b062-3d5386eb5371",
+      "purchaseDate": "2025-11-21T09:09:35.165Z",
+      "status": "used",
+      "code": "tkt-1763716175165-rx42s4",
+      "holderName": "Musanide Lubunda",
+      "holderEmail": "smlsunburst@yahoo.com",
+      "scanTimestamp": "2025-11-21T09:39:23.269Z"
     }
   ]
 }

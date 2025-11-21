@@ -1,3 +1,12 @@
 {
-  "deviceTokens": []
+  "deviceTokens": [
+    {
+      "id": "dt-1763716037822-lwjrtmkpo",
+      "deviceId": "dev-1763564979548",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZXYtMTc2MzU2NDk3OTU0OCIsInN0YWZmX3VzZXJfaWQiOiJzdGFmZi0xNzYzNTY0ODAyODU0IiwiZGV2aWNlX3B1YmxpY19pZCI6ImRldi02aHAzcWhrOSIsImV4cCI6MTc2Mzc0NDgzNywiaWF0IjoxNzYzNzE2MDM3fQ.KNPspiDbH39Ic5eKaulAX4i073WBti4uk_g6b_Et6gM",
+      "expiresAt": "2025-11-21T17:07:17.822Z",
+      "createdAt": "2025-11-21T09:07:17.822Z",
+      "updatedAt": "2025-11-21T09:07:17.822Z"
+    }
+  ]
 }
