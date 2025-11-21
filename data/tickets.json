@@ -90,6 +90,16 @@
       "tierId": "tier-1763536823344-y1vwd",
       "tierName": "General Admission",
       "scanTimestamp": "2025-11-19T16:38:37.965Z"
+    },
+    {
+      "ticketId": "tkt-1763709907600-nptpp5",
+      "eventId": "evt-cb09b0ea-0a9f-4603-8c92-e6ce61291f8b",
+      "userId": "7fd0ec94-d52c-4e3d-b062-3d5386eb5371",
+      "purchaseDate": "2025-11-21T07:25:07.601Z",
+      "status": "valid",
+      "code": "tkt-1763709907600-nptpp5",
+      "holderName": "Musanide Lubunda",
+      "holderEmail": "smlsunburst@yahoo.com"
     }
   ]
 }
