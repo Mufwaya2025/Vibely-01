@@ -3,6 +3,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { UserRole, UserStatus } from '../types';
 import { usersStore } from '../server/storage/usersStore';
 import { db } from './db';
+import { createUserToken } from '../server/utils/jwt';
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID ?? '';
 const googleClient = googleClientId ? new OAuth2Client(googleClientId) : null;
@@ -65,9 +66,10 @@ export async function handleLogin(req: { body: { email?: string; password?: stri
     return buildInactiveStatusResponse(storedUser.status);
   }
 
-  const user = usersStore.toPublicUser(storedUser);
+  const user = usersStore.toPublicUser(storedUser)!;
+  const token = createUserToken({ sub: user.id, role: user.role, status: user.status });
 
-  return new Response(JSON.stringify(user), {
+  return new Response(JSON.stringify({ ...user, authToken: token }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
@@ -127,7 +129,10 @@ export async function handleSignup(req: {
       passwordHash: usersStore.hashPassword(password),
     });
 
-    return new Response(JSON.stringify(usersStore.toPublicUser(newUser)), {
+    const publicUser = usersStore.toPublicUser(newUser)!;
+    const token = createUserToken({ sub: publicUser.id, role: publicUser.role, status: publicUser.status });
+
+    return new Response(JSON.stringify({ ...publicUser, authToken: token }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -194,7 +199,10 @@ export async function handleGoogleLogin(req: { body: { credential?: string } }) 
     }
 
     const user = usersStore.toPublicUser(storedUser);
-    return new Response(JSON.stringify(user), {
+    const token = user
+      ? createUserToken({ sub: user.id, role: user.role, status: user.status })
+      : '';
+    return new Response(JSON.stringify(user ? { ...user, authToken: token } : null), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

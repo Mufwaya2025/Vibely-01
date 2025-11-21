@@ -46,8 +46,11 @@ export const apiFetch = async (
   if (user) {
     fetchHeaders.set('x-user-id', user.id);
   }
+  // Prefer device token where provided (scanner endpoints), otherwise use user auth token
   if (deviceToken) {
     fetchHeaders.set('Authorization', `Bearer ${deviceToken}`);
+  } else if (user?.authToken) {
+    fetchHeaders.set('Authorization', `Bearer ${user.authToken}`);
   }
 
   const init: RequestInit = {

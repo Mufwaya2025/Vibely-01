@@ -65,6 +65,8 @@ export interface User {
   email: string;
   role: UserRole;
   status: UserStatus;
+  // Optional bearer token for authenticated API requests
+  authToken?: string;
   interests: EventCategory[];
   attendedEvents: string[]; // array of event IDs
   subscriptionTier?: 'Regular' | 'Pro';
