@@ -2223,6 +2223,110 @@
         "bankAccountDetails": null,
         "cardDetails": null
       }
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1763703249067-by5aza",
+      "purpose": "ticket",
+      "eventId": "evt-cb09b0ea-0a9f-4603-8c92-e6ce61291f8b",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+      "amount": 5,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Food Market",
+        "organizerId": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+        "ticketTierId": "tier-cb09-general",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Food Market (General Admission)"
+      },
+      "id": "txn_4b197459-8612-44d0-ad74-c95eedbe1247",
+      "createdAt": "2025-11-21T05:34:09.073Z",
+      "updatedAt": "2025-11-21T05:34:09.073Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1763706484806-9uglaw",
+      "purpose": "ticket",
+      "eventId": "evt-cb09b0ea-0a9f-4603-8c92-e6ce61291f8b",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+      "amount": 5,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Food Market",
+        "organizerId": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+        "ticketTierId": "tier-cb09-general",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Food Market (General Admission)"
+      },
+      "id": "txn_492a8f91-66a7-4839-ab0a-468197ebea46",
+      "createdAt": "2025-11-21T06:28:04.811Z",
+      "updatedAt": "2025-11-21T06:28:04.811Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1763707125567-83cc4n",
+      "purpose": "ticket",
+      "eventId": "evt-cb09b0ea-0a9f-4603-8c92-e6ce61291f8b",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+      "amount": 5,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Food Market",
+        "organizerId": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+        "ticketTierId": "tier-cb09-general",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Food Market (General Admission)"
+      },
+      "id": "txn_aab0629b-587e-4ea3-b3dc-c2b0b09ede78",
+      "createdAt": "2025-11-21T06:38:45.573Z",
+      "updatedAt": "2025-11-21T06:38:45.573Z"
+    },
+    {
+      "externalId": "pending",
+      "reference": "ticket-1763707299482-s823h5",
+      "purpose": "ticket",
+      "eventId": "evt-cb09b0ea-0a9f-4603-8c92-e6ce61291f8b",
+      "userId": "b876b8c7-012f-4f75-9adb-fd01ed192b53",
+      "organizerId": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+      "amount": 5,
+      "currency": "ZMW",
+      "status": "pending",
+      "provider": "Lenco",
+      "metadata": {
+        "eventTitle": "Food Market",
+        "organizerId": "36e23ee1-b687-4a80-8c43-d50d744c7f6d",
+        "ticketTierId": "tier-cb09-general",
+        "ticketTierName": "General Admission",
+        "channels": [
+          "mobile-money",
+          "card"
+        ],
+        "label": "Ticket for Food Market (General Admission)"
+      },
+      "id": "txn_0ce71541-6d68-4edc-bcd3-320384fe56b9",
+      "createdAt": "2025-11-21T06:41:39.482Z",
+      "updatedAt": "2025-11-21T06:41:39.482Z"
     }
   ]
 }

@@ -5,6 +5,7 @@ module.exports = {
     args: 'server/index.ts',
     cwd: '/var/www/vibely',
     instances: 1,
+    exec_mode: 'fork',     // ← Added here
     autorestart: true,
     watch: false,
     max_memory_restart: '1G',
